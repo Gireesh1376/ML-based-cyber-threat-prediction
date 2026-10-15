@@ -10,7 +10,6 @@ import {
   Gauge, 
   ChevronRight, 
   Info,
-  Activity,
   Layers,
   Sparkles,
   Target,
