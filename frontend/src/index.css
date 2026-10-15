@@ -1,0 +1,582 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #070b12;
+    --bg-surface: #0d1424;
+    --bg-surface-elevated: #131c31;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-highlight: rgba(255, 255, 255, 0.16);
+    --accent-emerald: #10b981;
+    --accent-cyan: #06b6d4;
+    --accent-amber: #f59e0b;
+    --accent-rose: #f43f5e;
+    --accent-indigo: #6366f1;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    min-height: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  /* Custom smooth scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgba(10, 16, 28, 0.6);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.25);
+    border-radius: 9999px;
+    transition: background 0.2s ease;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(16, 185, 129, 0.45);
+  }
+}
+
+/* Glassmorphism & UI Accents */
+.glass-panel {
+  background: rgba(13, 20, 36, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.45);
+}
+
+.glass-card {
+  background: linear-gradient(180deg, rgba(19, 28, 49, 0.7) 0%, rgba(13, 20, 36, 0.8) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.65), 0 0 20px -2px rgba(6, 182, 212, 0.08);
+}
+
+.glass-card-interactive {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-card-interactive:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.7), 0 0 24px -4px rgba(16, 185, 129, 0.15);
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 24px -2px rgba(16, 185, 129, 0.4);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 24px -2px rgba(6, 182, 212, 0.4);
+}
+
+.glow-rose {
+  box-shadow: 0 0 24px -2px rgba(244, 63, 94, 0.4);
+}
+
+.glow-amber {
+  box-shadow: 0 0 24px -2px rgba(245, 158, 11, 0.4);
+}
+
+.glow-indigo {
+  box-shadow: 0 0 24px -2px rgba(99, 102, 241, 0.4);
+}
+
+/* Animations */
+@keyframes landingFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideDrawer {
+  from {
+    transform: translateX(100%);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulseBeacon {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes radarSweep {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes radarPing {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Home Landing Page Slower Cinematic Fade Transition */
+.animate-landing-fade {
+  animation: landingFadeIn 1.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 1.05s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-in-down {
+  animation: fadeInDown 1.0s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-drawer-in {
+  animation: slideDrawer 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-beacon {
+  animation: pulseBeacon 2.5s infinite ease-in-out;
+}
+
+.animate-radar-sweep {
+  animation: radarSweep 3.5s linear infinite;
+}
+
+.animate-radar-ping {
+  animation: radarPing 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Stagger Delays */
+.delay-100 {
+  animation-delay: 100ms;
+}
+.delay-150 {
+  animation-delay: 150ms;
+}
+.delay-200 {
+  animation-delay: 200ms;
+}
+.delay-300 {
+  animation-delay: 300ms;
+}
+.delay-400 {
+  animation-delay: 400ms;
+}
+.delay-450 {
+  animation-delay: 450ms;
+}
+.delay-600 {
+  animation-delay: 600ms;
+}
+
+/* Scroll reveal transition classes: slower, buttery smooth, and graceful across all sections */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(38px);
+  transition: opacity 1.35s cubic-bezier(0.16, 1, 0.3, 1), transform 1.35s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-on-scroll.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ==========================================================================
+   AEGIS LUXURY LIGHT THEME SYSTEM
+   Ultra-modern, high-contrast, frosted ceramic & glass aesthetic
+   ========================================================================== */
+
+html.light,
+[data-theme="light"] {
+  --bg-main: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #f1f5f9;
+  --border-subtle: rgba(148, 163, 184, 0.25);
+  --border-highlight: rgba(148, 163, 184, 0.45);
+  --accent-emerald: #059669;
+  --accent-cyan: #0891b2;
+  --accent-amber: #d97706;
+  --accent-rose: #e11d48;
+  --accent-indigo: #4f46e5;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  color-scheme: light;
+}
+
+html.light body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  background-image: 
+    radial-gradient(at 15% 15%, rgba(16, 185, 129, 0.05) 0px, transparent 45%),
+    radial-gradient(at 85% 20%, rgba(6, 182, 212, 0.06) 0px, transparent 45%),
+    radial-gradient(at 50% 85%, rgba(99, 102, 241, 0.04) 0px, transparent 50%) !important;
+  background-attachment: fixed !important;
+}
+
+/* Smooth Light Scrollbars */
+html.light ::-webkit-scrollbar-track {
+  background: #f1f5f9 !important;
+}
+html.light ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4) !important;
+}
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(5, 150, 105, 0.6) !important;
+}
+
+/* Glass Surfaces in Light Mode - Crisp Frosted Acrylic & Ambient Shadows */
+html.light .glass-panel {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-color: rgba(226, 232, 240, 0.95) !important;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03) !important;
+}
+
+html.light .glass-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(226, 232, 240, 0.95) !important;
+  box-shadow: 0 4px 18px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.02) !important;
+}
+
+html.light .glass-card:hover {
+  border-color: rgba(148, 163, 184, 0.45) !important;
+  box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.09), 0 0 18px -2px rgba(6, 182, 212, 0.12) !important;
+  transform: translateY(-2px);
+}
+
+html.light .glass-card-interactive:hover {
+  box-shadow: 0 18px 40px -6px rgba(15, 23, 42, 0.12), 0 0 24px -2px rgba(16, 185, 129, 0.15) !important;
+}
+
+html.light .glass-pill {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(203, 213, 225, 0.9) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  color: #334155 !important;
+}
+
+/* Text Overrides for High Contrast Legibility */
+html.light .text-white,
+html.light .text-slate-100 {
+  color: #0f172a !important;
+}
+html.light .text-slate-200 {
+  color: #1e293b !important;
+}
+html.light .text-slate-300 {
+  color: #334155 !important;
+}
+html.light .text-slate-400 {
+  color: #475569 !important;
+}
+html.light .text-slate-500 {
+  color: #64748b !important;
+}
+html.light .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+/* Background Overrides for Full-Page Layout */
+html.light .bg-\[\#070b12\],
+html.light .bg-\[\#0d1424\] {
+  background-color: #f8fafc !important;
+}
+
+/* Nested Sub-Cards, Metric Tiles & Information Boxes in Light Mode */
+/* Fixes the 3 pipeline boxes in Landing, Triage Reason in Alerts, and Rationale in ZeroDayLab */
+html.light [class*="bg-slate-900"]:not([class*="h-"]),
+html.light [class*="bg-slate-800"]:not([class*="h-"]):not([class*="from-"]):not([class*="via-"]),
+html.light [class*="bg-slate-700"]:not([class*="h-"]),
+html.light [class*="bg-slate-950"]:not([class*="h-"]),
+html.light [class*="bg-black/"]:not([class*="h-"]):not([class*="fixed"]),
+html.light .bg-slate-900,
+html.light .bg-slate-950:not([class*="h-"]) {
+  background-color: #f8fafc !important;
+  border: 1px solid rgba(226, 232, 240, 0.95) !important;
+  color: #334155 !important;
+}
+
+/* Ensure all text inside nested boxes stays sharp and legible */
+html.light [class*="bg-slate-900"] p,
+html.light [class*="bg-slate-800"] p,
+html.light [class*="bg-slate-700"] p,
+html.light [class*="bg-black/"] p {
+  color: #475569 !important;
+}
+
+html.light [class*="bg-slate-900"] span,
+html.light [class*="bg-slate-800"] span,
+html.light [class*="bg-black/"] span {
+  color: inherit;
+}
+
+/* Progress Bar Tracks in Light Mode - Clean Slate-200 Track so Meters are Visible */
+html.light [class*="h-1"][class*="rounded-full"],
+html.light [class*="h-1.5"][class*="rounded-full"],
+html.light [class*="h-2"][class*="rounded-full"],
+html.light [class*="h-2.5"][class*="rounded-full"] {
+  background-color: #e2e8f0 !important;
+  border: none !important;
+}
+
+/* Active Segmented Buttons / Tabs (e.g. in ZeroDayLab categories) */
+html.light .bg-white\/15,
+html.light [class*="bg-white/15"],
+html.light [class*="bg-white/20"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(203, 213, 225, 0.9) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Border Overrides */
+html.light .border-white\/5,
+html.light .border-white\/8,
+html.light .border-white\/10,
+html.light .border-white\/12,
+html.light .border-white\/15,
+html.light .border-white\/20,
+html.light .border-white\/25 {
+  border-color: rgba(226, 232, 240, 0.95) !important;
+}
+
+/* Vibrant Light Mode Accents */
+html.light .text-emerald-400,
+html.light .text-emerald-300 {
+  color: #059669 !important;
+}
+html.light .text-cyan-400,
+html.light .text-cyan-300 {
+  color: #0891b2 !important;
+}
+html.light .text-rose-400,
+html.light .text-rose-300 {
+  color: #e11d48 !important;
+}
+html.light .text-amber-400,
+html.light .text-amber-300 {
+  color: #d97706 !important;
+}
+html.light .text-violet-400,
+html.light .text-violet-300 {
+  color: #7c3aed !important;
+}
+html.light .text-teal-400,
+html.light .text-teal-300 {
+  color: #0d9488 !important;
+}
+
+/* Accent Containers / Badges in Light Mode */
+html.light .bg-emerald-500\/10,
+html.light .bg-emerald-500\/15,
+html.light .bg-emerald-500\/20,
+html.light .bg-emerald-500\/25 {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+html.light .bg-cyan-500\/10,
+html.light .bg-cyan-500\/15,
+html.light .bg-cyan-500\/20,
+html.light .bg-cyan-500\/25,
+html.light .bg-cyan-950\/10,
+html.light .bg-cyan-950\/20,
+html.light .bg-cyan-950\/40 {
+  background-color: rgba(6, 182, 212, 0.12) !important;
+  border-color: rgba(6, 182, 212, 0.3) !important;
+}
+html.light .bg-rose-500\/10,
+html.light .bg-rose-500\/15,
+html.light .bg-rose-500\/20,
+html.light .bg-rose-500\/25 {
+  background-color: rgba(244, 63, 94, 0.12) !important;
+  border-color: rgba(244, 63, 94, 0.3) !important;
+}
+html.light .bg-amber-500\/10,
+html.light .bg-amber-500\/15,
+html.light .bg-amber-500\/20,
+html.light .bg-amber-500\/25 {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+html.light .bg-violet-500\/10,
+html.light .bg-violet-500\/20 {
+  background-color: rgba(139, 92, 246, 0.12) !important;
+  border-color: rgba(139, 92, 246, 0.3) !important;
+}
+
+/* Hover States in Light Mode */
+html.light .hover\:bg-white\/5:hover,
+html.light .hover\:bg-white\/10:hover {
+  background-color: rgba(241, 245, 249, 0.95) !important;
+}
+html.light .hover\:text-white:hover {
+  color: #0f172a !important;
+}
+html.light .hover\:border-white\/15:hover,
+html.light .hover\:border-white\/20:hover {
+  border-color: rgba(148, 163, 184, 0.5) !important;
+}
+
+/* Interactive Inputs & Code Blocks in Light Mode */
+html.light input,
+html.light select,
+html.light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(203, 213, 225, 0.9) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+html.light input:focus,
+html.light select:focus,
+html.light textarea:focus {
+  border-color: #059669 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+  outline: none !important;
+}
+html.light input::placeholder {
+  color: #94a3b8 !important;
+}
+html.light select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+html.light code {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(226, 232, 240, 0.95) !important;
+}
+
+/* Tables in Light Mode */
+html.light thead {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.95) !important;
+}
+html.light tbody tr:hover {
+  background-color: rgba(241, 245, 249, 0.8) !important;
+}
+html.light .divide-white\/5 > * + * {
+  border-color: rgba(226, 232, 240, 0.9) !important;
+}
+
+/* Selected Alert Item in Alerts Table */
+html.light tr[class*="bg-emerald-500/10"] {
+  background-color: rgba(16, 185, 129, 0.08) !important;
+}
+
+/* Glow Halos Adjusted for Light Mode */
+html.light .glow-emerald {
+  box-shadow: 0 0 24px -2px rgba(16, 185, 129, 0.25) !important;
+}
+html.light .glow-cyan {
+  box-shadow: 0 0 24px -2px rgba(6, 182, 212, 0.25) !important;
+}
+html.light .glow-rose {
+  box-shadow: 0 0 24px -2px rgba(244, 63, 94, 0.25) !important;
+}
+html.light .glow-amber {
+  box-shadow: 0 0 24px -2px rgba(245, 158, 11, 0.25) !important;
+}
+html.light .glow-indigo {
+  box-shadow: 0 0 24px -2px rgba(99, 102, 241, 0.25) !important;
+}
