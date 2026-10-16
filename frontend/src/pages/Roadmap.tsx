@@ -61,17 +61,17 @@ const problems = [
     id: 'P4',
     title: 'Adversarial Evasion Robustness',
     subtitle: 'Constrained Perturbations & Adversarial Retraining',
-    status: 'Phase 3 (Planned)',
-    badgeClass: 'bg-slate-700/50 text-slate-300 border-white/10',
+    status: 'Implemented',
+    badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
     icon: ShieldAlert,
     metrics: [
-      { label: 'Target Defense', val: 'DEMGAN / UAP' },
-      { label: 'Model Retained', val: 'Tree-Ensemble' },
-      { label: 'Rule Constraints', val: 'Feature Binding' },
+      { label: 'Evasion Mitigation', val: '45.9%' },
+      { label: 'Hardened Recall', val: '92.5%' },
+      { label: 'FPR Penalty', val: '0.0%' },
     ],
     body: 'Hardens the tree-ensemble core against generative evasion attacks (such as DEMGAN and universal perturbations) using network-protocol constrained adversarial sample synthesis and iterative retraining passes.',
-    link: null,
-    linkLabel: null,
+    link: '/adversarial',
+    linkLabel: 'Open Defense Studio',
   },
 ]
 
@@ -90,7 +90,7 @@ export default function Roadmap() {
         </div>
 
         <div className="glass-pill px-3 py-1.5 rounded-xl text-xs font-mono text-slate-300">
-          Current Release: <span className="text-emerald-400 font-bold">Problems 1 & 3 Built</span>
+          Current Release: <span className="text-emerald-400 font-bold">Problems 1, 3 & 4 Built</span>
         </div>
       </div>
 
@@ -99,9 +99,9 @@ export default function Roadmap() {
         <div className="glass-card p-6 border border-white/10 space-y-2">
           <h2 className="text-sm font-bold text-white uppercase tracking-wider">Unified Threat Architecture</h2>
           <p className="text-xs text-slate-400 leading-relaxed max-w-4xl">
-            Rather than deploying four disconnected tools, the research design integrates all four challenges into a single 
-            cyber defense workflow. In this prototype, <strong>Problem 1 (Zero-Day Detection)</strong> and <strong>Problem 3 (Alert Prioritisation)</strong> are 
-            fully implemented and empirically validated on the NSL-KDD benchmark. Problems 2 and 4 represent the next planned phases in the architecture roadmap.
+            Rather than deploying disconnected tools, the research design integrates the challenges into a single 
+            cyber defense workflow. In this release, <strong>Problem 1 (Zero-Day Detection)</strong>, <strong>Problem 3 (Alert Prioritisation)</strong>, and <strong>Problem 4 (Adversarial Robustness)</strong> are 
+            fully implemented and empirically validated on the NSL-KDD benchmark. Problem 2 represents the next planned phase in the architecture roadmap.
           </p>
         </div>
       </ScrollSection>

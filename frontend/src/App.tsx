@@ -11,8 +11,9 @@ import {
   PanelLeftOpen, 
   Home, 
   Zap,
-  SunMedium,
-  Moon
+  Lightbulb,
+  Moon,
+  ShieldAlert
 } from 'lucide-react'
 import { useTheme } from './context/ThemeContext'
 
@@ -21,6 +22,7 @@ const navigationItems = [
   { to: '/overview', label: 'Threat Operations', icon: LayoutDashboard, end: false, badge: 'Live' },
   { to: '/alerts', label: 'Incident Triage', icon: BellRing, end: false, badge: 'Queue' },
   { to: '/zero-day', label: 'Zero-Day Studio', icon: Radar, end: false, badge: 'Lab' },
+  { to: '/adversarial', label: 'Adversarial Defense', icon: ShieldAlert, end: false, badge: 'Hardened' },
   { to: '/model', label: 'Model Intelligence', icon: Cpu, end: false, badge: '87.5%' },
   { to: '/roadmap', label: 'Program Roadmap', icon: ShieldCheck, end: false, badge: '4-Tier' },
 ]
@@ -50,7 +52,7 @@ export default function App() {
     <div className="min-h-screen flex bg-[#070b12] text-slate-100 font-sans selection:bg-emerald-500/20 selection:text-emerald-300 antialiased">
       {/* Animated Collapsible Sidebar */}
       <aside 
-        className={`shrink-0 border-r border-white/8 glass-panel z-30 transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] flex flex-col relative ${
+        className={`shrink-0 border-r border-white/8 glass-panel z-30 transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] flex flex-col sticky top-0 h-screen ${
           collapsed ? 'w-20' : 'w-64'
         }`}
       >
@@ -179,17 +181,31 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Sidebar Quick Theme Switcher */}
+              {/* Lower Left Professional Theme Switcher */}
               <button
                 onClick={toggleTheme}
-                className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-black/20 hover:bg-white/10 text-[11px] text-slate-400 hover:text-white transition-all cursor-pointer border border-white/5"
+                id="sidebar-theme-toggle"
+                className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl transition-all duration-200 cursor-pointer group border border-white/10 hover:border-white/20 bg-white/[0.04] hover:bg-white/[0.08]"
                 title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode (Shift + T)`}
+                aria-label={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
               >
-                <span className="flex items-center gap-1.5">
-                  {theme === 'dark' ? <SunMedium size={13} className="text-amber-400" /> : <Moon size={13} className="text-indigo-400" />}
-                  <span>{theme === 'dark' ? 'Light Theme' : 'Dark Theme'}</span>
+                <span className="flex items-center gap-2">
+                  <span className={`p-1 rounded-lg transition-colors ${
+                    theme === 'dark' ? 'text-amber-400' : 'text-indigo-400'
+                  }`}>
+                    {theme === 'dark' ? (
+                      <Lightbulb size={15} className="fill-amber-400/20 group-hover:scale-110 transition-transform duration-200" />
+                    ) : (
+                      <Moon size={15} className="fill-indigo-400/20 group-hover:-rotate-12 transition-transform duration-200" />
+                    )}
+                  </span>
+                  <span className="text-xs font-medium text-slate-300 group-hover:text-white transition-colors">
+                    {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                  </span>
                 </span>
-                <kbd className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/10">⇧T</kbd>
+                <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-slate-400 group-hover:text-slate-200">
+                  ⇧T
+                </kbd>
               </button>
             </>
           ) : (
@@ -197,10 +213,16 @@ export default function App() {
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-beacon shadow-[0_0_10px_#10b981]" title="Core Engine: Active & Online" />
               <button
                 onClick={toggleTheme}
-                className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                title={`Toggle Theme (${theme === 'dark' ? 'Light' : 'Dark'})`}
+                id="sidebar-theme-toggle-collapsed"
+                className="p-2 rounded-xl transition-all duration-200 cursor-pointer group border border-white/10 hover:border-white/20 bg-white/[0.04] hover:bg-white/[0.08]"
+                title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode (Shift + T)`}
+                aria-label={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
               >
-                {theme === 'dark' ? <SunMedium size={14} className="text-amber-400" /> : <Moon size={14} className="text-indigo-400" />}
+                {theme === 'dark' ? (
+                  <Lightbulb size={16} className="text-amber-400 fill-amber-400/20 group-hover:scale-110 transition-transform duration-200" />
+                ) : (
+                  <Moon size={16} className="text-indigo-400 fill-indigo-400/20 group-hover:-rotate-12 transition-transform duration-200" />
+                )}
               </button>
             </div>
           )}
@@ -233,18 +255,19 @@ export default function App() {
             {/* Header Theme Toggle Pill */}
             <button
               onClick={toggleTheme}
+              id="header-theme-toggle"
               className="flex items-center gap-2 px-3 py-1.5 rounded-full glass-pill text-xs font-medium transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 group shadow-sm border border-white/10 hover:border-emerald-500/40"
               title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode (Hotkey: Shift + T)`}
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? (
                 <>
-                  <SunMedium size={14} className="text-amber-400 group-hover:rotate-45 transition-transform duration-300" />
+                  <Lightbulb size={14} className="text-amber-400 fill-amber-400/20 group-hover:scale-110 transition-transform duration-300" />
                   <span className="text-slate-300 group-hover:text-white transition-colors">Light Mode</span>
                 </>
               ) : (
                 <>
-                  <Moon size={14} className="text-indigo-500 group-hover:-rotate-12 transition-transform duration-300" />
+                  <Moon size={14} className="text-indigo-400 fill-indigo-400/20 group-hover:-rotate-12 transition-transform duration-300" />
                   <span className="text-slate-700 group-hover:text-slate-900 transition-colors">Dark Mode</span>
                 </>
               )}

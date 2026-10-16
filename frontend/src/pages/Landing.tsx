@@ -157,51 +157,45 @@ export default function Landing() {
             <Sparkles size={13} className="text-cyan-400" />
             <span>Empirical Solutions</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Two Problems Addressed, with Measured Results</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Core Research Pillars Addressed with Measured Results</h2>
           <p className="text-sm text-slate-400">
-            Validated against leave-family-out benchmarks with comprehensive mathematical transparency.
+            Validated against leave-family-out and adversarial benchmarks with comprehensive mathematical transparency.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-3 gap-6">
           {/* Pillar 1: Zero-Day */}
-          <div className="glass-card-interactive glass-card p-7 space-y-5 border border-white/10 hover:border-cyan-500/40 relative overflow-hidden group">
-            {/* Ambient Radar Scanner in corner */}
-            <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full border border-cyan-500/10 pointer-events-none flex items-center justify-center">
-              <div className="w-full h-full rounded-full border border-cyan-500/20 animate-radar-ping pointer-events-none" />
-              <div className="absolute w-20 h-20 rounded-full bg-gradient-to-tr from-cyan-500/20 to-transparent animate-radar-sweep pointer-events-none" />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="h-12 w-12 rounded-2xl bg-cyan-500/10 text-cyan-400 grid place-items-center border border-cyan-500/20 group-hover:scale-105 transition-transform">
-                <Radar size={24} />
+          <div className="glass-card-interactive glass-card p-6 space-y-4 border border-white/10 hover:border-cyan-500/40 relative overflow-hidden group flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="h-11 w-11 rounded-2xl bg-cyan-500/10 text-cyan-400 grid place-items-center border border-cyan-500/20 group-hover:scale-105 transition-transform">
+                  <Radar size={22} />
+                </div>
+                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+                  PROBLEM 1 · BUILT
+                </span>
               </div>
-              <span className="text-xs font-mono px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
-                PROBLEM 1 · IMPLEMENTED
-              </span>
-            </div>
 
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">
-                Dual-Model Hybrid Zero-Day Detection
-              </h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                Supervised models miss unobserved attack signatures. Aegis pairs an unsupervised MLP autoencoder
-                trained purely on benign network traffic with an XGBoost classifier. When traffic exhibits high reconstruction
-                error and the classifier is unconfident, it is promoted to a novel threat.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-2 text-xs">
-              <div className="p-3 rounded-xl bg-slate-900/60 border border-white/5 space-y-1">
-                <span className="text-slate-400">Hybrid Attack Recall</span>
-                <div className="text-lg font-bold text-cyan-300 font-mono">84.1%</div>
-                <span className="text-[10px] text-slate-500">vs ≤ 65.9% for supervised</span>
+              <div className="space-y-1.5">
+                <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors">
+                  Dual-Model Zero-Day Detection
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Pairs an unsupervised MLP autoencoder on benign flows with XGBoost known-family classification to capture unobserved zero-day anomalies.
+                </p>
               </div>
-              <div className="p-3 rounded-xl bg-slate-900/60 border border-white/5 space-y-1">
-                <span className="text-slate-400">Zero-Day Family Catch</span>
-                <div className="text-lg font-bold text-cyan-300 font-mono">76.4%</div>
-                <span className="text-[10px] text-slate-500">vs ≤ 43.4% for baselines</span>
+
+              <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
+                <div className="p-2.5 rounded-xl bg-slate-900/60 border border-white/5 space-y-0.5">
+                  <span className="text-[10px] text-slate-400">Attack Recall</span>
+                  <div className="text-base font-bold text-cyan-300 font-mono">84.1%</div>
+                  <span className="text-[9px] text-slate-500">vs ≤ 65.9% sup.</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-900/60 border border-white/5 space-y-0.5">
+                  <span className="text-[10px] text-slate-400">Zero-Day Catch</span>
+                  <div className="text-base font-bold text-cyan-300 font-mono">76.4%</div>
+                  <span className="text-[9px] text-slate-500">vs ≤ 43.4% base</span>
+                </div>
               </div>
             </div>
 
@@ -210,44 +204,44 @@ export default function Landing() {
                 to="/zero-day"
                 className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 inline-flex items-center gap-1.5 group/btn"
               >
-                <span>Interactive Zero-Day Studio</span>
-                <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                <span>Zero-Day Studio</span>
+                <ArrowRight size={13} className="group-hover/btn:translate-x-1 transition-transform" />
               </Link>
             </div>
           </div>
 
           {/* Pillar 2: Alert Fatigue */}
-          <div className="glass-card-interactive glass-card p-7 space-y-5 border border-white/10 hover:border-emerald-500/40 relative overflow-hidden group">
-            <div className="flex items-center justify-between">
-              <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 text-emerald-400 grid place-items-center border border-emerald-500/20 group-hover:scale-105 transition-transform">
-                <Gauge size={24} />
+          <div className="glass-card-interactive glass-card p-6 space-y-4 border border-white/10 hover:border-emerald-500/40 relative overflow-hidden group flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="h-11 w-11 rounded-2xl bg-emerald-500/10 text-emerald-400 grid place-items-center border border-emerald-500/20 group-hover:scale-105 transition-transform">
+                  <Gauge size={22} />
+                </div>
+                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                  PROBLEM 3 · BUILT
+                </span>
               </div>
-              <span className="text-xs font-mono px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
-                PROBLEM 3 · IMPLEMENTED
-              </span>
-            </div>
 
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold text-white group-hover:text-emerald-300 transition-colors">
-                Composite Prioritization & Tiered Triage
-              </h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                Raw volume overwhelms security analysts. Every alert is scored on a normalized $[0, 1]$ composite priority
-                combining class-aware attack confidence, reconstruction anomaly, threat family severity, asset criticality,
-                and novelty bonus into Critical, Review, and Auto-logged tiers.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-2 text-xs">
-              <div className="p-3 rounded-xl bg-slate-900/60 border border-white/5 space-y-1">
-                <span className="text-slate-400">Workload Reduction</span>
-                <div className="text-lg font-bold text-emerald-300 font-mono">47.7%</div>
-                <span className="text-[10px] text-slate-500">Auto-logged routine flows</span>
+              <div className="space-y-1.5">
+                <h3 className="text-lg font-bold text-white group-hover:text-emerald-300 transition-colors">
+                  Composite Prioritization & Triage
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Scores alerts on a 5-factor composite priority combining attack confidence, anomaly ratio, severity, asset criticality, and novelty bonus.
+                </p>
               </div>
-              <div className="p-3 rounded-xl bg-slate-900/60 border border-white/5 space-y-1">
-                <span className="text-slate-400">Critical Tier Precision</span>
-                <div className="text-lg font-bold text-emerald-300 font-mono">93.7%</div>
-                <span className="text-[10px] text-slate-500">85.4% attacks retained</span>
+
+              <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
+                <div className="p-2.5 rounded-xl bg-slate-900/60 border border-white/5 space-y-0.5">
+                  <span className="text-[10px] text-slate-400">Workload Drop</span>
+                  <div className="text-base font-bold text-emerald-300 font-mono">47.7%</div>
+                  <span className="text-[9px] text-slate-500">Auto-logged flows</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-900/60 border border-white/5 space-y-0.5">
+                  <span className="text-[10px] text-slate-400">Critical Precision</span>
+                  <div className="text-base font-bold text-emerald-300 font-mono">93.7%</div>
+                  <span className="text-[9px] text-slate-500">85.4% attacks kept</span>
+                </div>
               </div>
             </div>
 
@@ -256,8 +250,54 @@ export default function Landing() {
                 to="/alerts"
                 className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 inline-flex items-center gap-1.5 group/btn"
               >
-                <span>Explore Incident Triage Queue</span>
-                <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                <span>Triage Queue</span>
+                <ArrowRight size={13} className="group-hover/btn:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Pillar 3: Adversarial Evasion Robustness */}
+          <div className="glass-card-interactive glass-card p-6 space-y-4 border border-white/10 hover:border-rose-500/40 relative overflow-hidden group flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="h-11 w-11 rounded-2xl bg-rose-500/10 text-rose-400 grid place-items-center border border-rose-500/20 group-hover:scale-105 transition-transform">
+                  <ShieldAlert size={22} />
+                </div>
+                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-300 border border-rose-500/20">
+                  PROBLEM 4 · BUILT
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                <h3 className="text-lg font-bold text-white group-hover:text-rose-300 transition-colors">
+                  Adversarial Evasion Robustness
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Hardens the ensemble against generative evasion (DEMGAN, UAP) using domain-constrained synthetic perturbations and iterative retraining.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
+                <div className="p-2.5 rounded-xl bg-slate-900/60 border border-white/5 space-y-0.5">
+                  <span className="text-[10px] text-slate-400">Evasion Drop</span>
+                  <div className="text-base font-bold text-rose-300 font-mono">45.9%</div>
+                  <span className="text-[9px] text-slate-500">Under DEMGAN</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-900/60 border border-white/5 space-y-0.5">
+                  <span className="text-[10px] text-slate-400">Hardened Recall</span>
+                  <div className="text-base font-bold text-rose-300 font-mono">92.5%</div>
+                  <span className="text-[9px] text-slate-500">0% FPR penalty</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <Link
+                to="/adversarial"
+                className="text-xs font-semibold text-rose-400 hover:text-rose-300 inline-flex items-center gap-1.5 group/btn"
+              >
+                <span>Adversarial Defense Studio</span>
+                <ArrowRight size={13} className="group-hover/btn:translate-x-1 transition-transform" />
               </Link>
             </div>
           </div>

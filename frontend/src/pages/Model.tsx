@@ -73,7 +73,7 @@ export default function Model() {
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
                 <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Same-Distribution Validation</span>
-                <h3 className="text-lg font-bold text-white mt-0.5">Known-Class In-Sample Fit</h3>
+                <h3 className="text-lg font-bold text-white mt-0.5">Validation Split — Known Classes</h3>
               </div>
               <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 {(metrics.validation_rows || 18896).toLocaleString()} Flows
@@ -155,12 +155,12 @@ export default function Model() {
           </div>
 
           <p className="text-xs text-slate-400 leading-relaxed">
-            The 15 attack families in <code className="text-cyan-300">ZERO_DAY_LABELS</code> were excluded entirely from training. 
-            The novelty gate (<code className="text-slate-200">0.90</code>) and reconstruction quantile (<code className="text-slate-200">0.96</code>) 
+            The 15 attack families in <code className="text-cyan-300">ZERO_DAY_LABELS</code> were excluded entirely from training.
+            The novelty gate (<code className="text-slate-200">0.90</code>) and reconstruction quantile (<code className="text-slate-200">0.96</code>)
             were tuned on validation pseudo-zero-days (<code className="text-slate-200">back, nmap, warezclient</code>) with a false-positive budget ≤ 5%.
           </p>
 
-          <div className="grid sm:grid-cols-4 gap-3 pt-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2">
             <div className="p-3 rounded-xl bg-slate-900/60 border border-white/5 space-y-1">
               <span className="text-[10px] text-slate-500 uppercase font-semibold">Held-Out Rows</span>
               <div className="text-xl font-bold font-mono text-white">3,568</div>
@@ -168,21 +168,27 @@ export default function Model() {
             </div>
 
             <div className="p-3 rounded-xl bg-slate-900/60 border border-white/5 space-y-1">
-              <span className="text-[10px] text-slate-500 uppercase font-semibold">Caught as Non-Normal</span>
+              <span className="text-[10px] text-slate-500 uppercase font-semibold">Held-out flows detected as non-normal</span>
               <div className="text-xl font-bold font-mono text-cyan-400">76.37%</div>
               <span className="text-[10px] text-slate-500">2,725 / 3,568</span>
             </div>
 
             <div className="p-3 rounded-xl bg-slate-900/60 border border-white/5 space-y-1">
-              <span className="text-[10px] text-slate-500 uppercase font-semibold">Explicit Zero-Day Flag</span>
+              <span className="text-[10px] text-slate-500 uppercase font-semibold">ZERO-DAY PRECISION</span>
+              <div className="text-xl font-bold font-mono text-cyan-400">51.59%</div>
+              <span className="text-[10px] text-slate-500">F1: 0.505</span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-900/60 border border-white/5 space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase font-semibold">ZERO-DAY RECALL</span>
               <div className="text-xl font-bold font-mono text-cyan-400">49.41%</div>
               <span className="text-[10px] text-slate-500">1,763 / 3,568</span>
             </div>
 
             <div className="p-3 rounded-xl bg-slate-900/60 border border-white/5 space-y-1">
-              <span className="text-[10px] text-slate-500 uppercase font-semibold">Screening Precision</span>
-              <div className="text-xl font-bold font-mono text-white">0.516</div>
-              <span className="text-[10px] text-slate-500">F1: 0.505</span>
+              <span className="text-[10px] text-slate-500 uppercase font-semibold">ZERO-DAY FPR</span>
+              <div className="text-xl font-bold font-mono text-cyan-400">8.72%</div>
+              <span className="text-[10px] text-slate-500">1,654 / 18,976 non-zero-day flows</span>
             </div>
           </div>
         </div>

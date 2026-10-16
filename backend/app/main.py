@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import dashboard, detect
+from app.routers import adversarial, dashboard, detect
 
 app = FastAPI(
     title="ML-Based Cyber Threat Prediction",
-    description="Hybrid Autoencoder + XGBoost IDS focused on zero-day / unknown attacks.",
-    version="0.1.0",
+    description="Hybrid Autoencoder + XGBoost IDS focused on zero-day / unknown attacks and adversarial robustness.",
+    version="0.2.0",
 )
 
 app.add_middleware(
@@ -19,6 +19,7 @@ app.add_middleware(
 
 app.include_router(dashboard.router, prefix="/api")
 app.include_router(detect.router, prefix="/api")
+app.include_router(adversarial.router)
 
 
 @app.get("/api/health")
