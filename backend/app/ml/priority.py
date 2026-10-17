@@ -135,7 +135,7 @@ def derive_tier_cutoffs(
     scores = np.asarray(scores, dtype=float)
     true_attack = np.asarray(true_attack, dtype=bool)
     if not true_attack.any():
-        return {"critical": 0.75, "review": 0.45}
+        return {"critical": 0.5901, "review": 0.1364}
     benign_scores = scores[~true_attack]
     critical_cut = float(np.quantile(scores[true_attack], 1.0 - attack_share))
     review_cut = (

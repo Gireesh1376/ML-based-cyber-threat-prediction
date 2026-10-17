@@ -232,6 +232,12 @@ export type AdversarialSweepItem = {
   baseline_attack_recall: number
   hardened_attack_recall: number
   evasion_mitigation_pct: number
+  adaptive_hardened_classifier_evasion?: number
+  adaptive_hardened_hybrid_evasion?: number
+  adaptive_hardened_attack_recall?: number
+  valid_samples_count?: number
+  total_samples_count?: number
+  constraint_validity_pct?: number
 }
 
 export type AdversarialMetrics = {
@@ -284,6 +290,7 @@ export async function simulateAdversarial(payload: {
   flow?: Record<string, string | number>
   method?: string
   epsilon?: number
+  adaptive?: boolean
 }): Promise<AdversarialSimulateResult> {
   const res = await fetch(`${API}/api/adversarial/simulate`, {
     method: 'POST',

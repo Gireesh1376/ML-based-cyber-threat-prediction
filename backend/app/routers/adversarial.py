@@ -6,7 +6,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.ml.adversarial import (
     load_adversarial_metrics,
@@ -18,13 +18,13 @@ router = APIRouter(prefix="/api/adversarial", tags=["adversarial"])
 
 
 class AdversarialSimulateRequest(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     preset: str | None = Field(default=None, description="Optional preset name (e.g. known_dos, probe_scan)")
     flow: dict[str, Any] | None = Field(default=None, description="Raw network flow attributes")
     method: str = Field(default="demgan", description="Perturbation method: demgan, uap, or fgsm")
     epsilon: float = Field(default=0.20, ge=0.01, le=0.50, description="Perturbation budget ε")
-
-    class Config:
-        extra = "allow"
+    adaptive: bool = Field(default=False, description="Whether attack adapts to the hardened model directly")
 
 
 @router.get("/metrics")
@@ -43,19 +43,19 @@ def get_adversarial_presets() -> dict[str, Any]:
         "presets": PRESETS,
         "methods": {
             "demgan": {
-                "name": "DEMGAN (Xu et al. 2025)",
-                "description": "Multi-generator GAN evasion scheme tailored per threat family. Drifts mutable timing, error, and rate characteristics toward normal distributions with calibrated variance.",
-                "type": "Generative / Black-Box",
+                "name": "DEMGAN Manifold Drift (Xu et al. 2025 Approximation)",
+                "description": "Empirical manifold drift approximation towards benign traffic distribution with calibrated stochastic jitter. (Note: Evaluated as a surrogate approximation; does not use a trained neural GAN generator).",
+                "type": "Manifold Drift / Approximation",
             },
             "uap": {
                 "name": "Universal Adversarial Perturbation (Zhang et al. 2025)",
-                "description": "Pre-computed universal perturbation vector applied across high-throughput packet streams without per-flow latency.",
-                "type": "Universal / High-Speed",
+                "description": "Genuine universal perturbation vector optimized against detector feedback across multiple network flows to evade detection with zero per-flow latency.",
+                "type": "Universal / Model-Optimized",
             },
             "fgsm": {
-                "name": "Constrained FGSM (Gradient Approximation)",
-                "description": "Directional gradient sensitivity approximation that steps mutable features toward the decision boundary of benign traffic.",
-                "type": "White-Box / Gradient",
+                "name": "Constrained FGSM (White-Box Gradient)",
+                "description": "Genuine gradient-based perturbation utilizing the trained hybrid model's gradients to identify minimal input changes causing misclassification.",
+                "type": "White-Box / Gradient-Feedback",
             },
         },
     }
@@ -76,7 +76,12 @@ def simulate_evasion(req: AdversarialSimulateRequest) -> dict[str, Any]:
         payload = PRESETS["known_dos"].copy()
 
     try:
-        result = simulate_adversarial_flow(payload, method=req.method, epsilon=req.epsilon)
+        result = simulate_adversarial_flow(
+            payload,
+            method=req.method,
+            epsilon=req.epsilon,
+            adaptive=req.adaptive,
+        )
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Simulation failed: {e}")

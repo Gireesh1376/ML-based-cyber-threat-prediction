@@ -33,6 +33,7 @@ export default function AdversarialLab() {
   const [selectedPreset, setSelectedPreset] = useState<string>('known_dos')
   const [selectedMethod, setSelectedMethod] = useState<string>('demgan')
   const [epsilon, setEpsilon] = useState<number>(0.20)
+  const [isAdaptive, setIsAdaptive] = useState<boolean>(false)
   const [simResult, setSimResult] = useState<AdversarialSimulateResult | null>(null)
   const [busy, setBusy] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
@@ -43,10 +44,10 @@ export default function AdversarialLab() {
       .catch((e) => setError(e instanceof Error ? e.message : 'Failed loading metrics'))
 
     // Run initial simulation
-    runSimulation('known_dos', 'demgan', 0.20)
+    runSimulation('known_dos', 'demgan', 0.20, false)
   }, [])
 
-  async function runSimulation(preset = selectedPreset, method = selectedMethod, eps = epsilon) {
+  async function runSimulation(preset = selectedPreset, method = selectedMethod, eps = epsilon, adaptive = isAdaptive) {
     setBusy(true)
     setError('')
     try {
@@ -54,6 +55,7 @@ export default function AdversarialLab() {
         preset,
         method,
         epsilon: eps,
+        adaptive,
       })
       setSimResult(res)
     } catch (e) {
@@ -65,16 +67,21 @@ export default function AdversarialLab() {
 
   function handlePresetChange(presetKey: string) {
     setSelectedPreset(presetKey)
-    runSimulation(presetKey, selectedMethod, epsilon)
+    runSimulation(presetKey, selectedMethod, epsilon, isAdaptive)
   }
 
   function handleMethodChange(methodKey: string) {
     setSelectedMethod(methodKey)
-    runSimulation(selectedPreset, methodKey, epsilon)
+    runSimulation(selectedPreset, methodKey, epsilon, isAdaptive)
   }
 
   function handleEpsilonChange(val: number) {
     setEpsilon(val)
+  }
+
+  function handleAdaptiveToggle(val: boolean) {
+    setIsAdaptive(val)
+    runSimulation(selectedPreset, selectedMethod, epsilon, val)
   }
 
   const isEvasionBlocked = simResult?.analysis.evasion_blocked ?? false
@@ -204,21 +211,21 @@ export default function AdversarialLab() {
                 {[
                   {
                     id: 'demgan',
-                    title: 'DEMGAN (Xu et al. 2025)',
-                    badge: 'Generative GAN',
-                    desc: 'Family-tailored generative mutations shifting error and rate distributions with controlled jitter.',
+                    title: 'DEMGAN Manifold Drift',
+                    badge: 'Surrogate Approx',
+                    desc: 'Empirical manifold drift approximation towards benign traffic distribution with calibrated stochastic jitter (Xu et al. 2025 surrogate).',
                   },
                   {
                     id: 'uap',
                     title: 'Universal Perturbation (Zhang 2025)',
-                    badge: 'Universal UAP',
-                    desc: 'Pre-computed universal shift vector applied across real-time packet streams.',
+                    badge: 'Model-Optimized UAP',
+                    desc: 'Universal perturbation vector optimized against detector feedback across multiple network flows.',
                   },
                   {
                     id: 'fgsm',
                     title: 'Constrained FGSM',
-                    badge: 'Gradient Path',
-                    desc: 'Directional sensitivity step moving mutable features toward the normal boundary.',
+                    badge: 'White-Box Gradient',
+                    desc: 'Genuine gradient-based perturbation utilizing hybrid model loss feedback to discover minimal evasion steps.',
                   },
                 ].map((scheme) => {
                   const active = selectedMethod === scheme.id
@@ -267,6 +274,25 @@ export default function AdversarialLab() {
                 <span>0.20 (Standard)</span>
                 <span>0.40 (Aggressive)</span>
               </div>
+            </div>
+
+            {/* Adaptive Attack Mode Toggle */}
+            <div className="pt-2 border-t border-white/8 flex items-center justify-between">
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block">Adaptive Attack Mode</label>
+                <span className="text-[10px] text-slate-500">Target Hardened Model directly</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleAdaptiveToggle(!isAdaptive)}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-all border cursor-pointer ${
+                  isAdaptive
+                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-sm shadow-rose-500/20'
+                    : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'
+                }`}
+              >
+                {isAdaptive ? 'ADAPTIVE: ON' : 'TRANSFER: BASELINE'}
+              </button>
             </div>
 
             {/* Re-simulate Trigger */}
@@ -550,6 +576,7 @@ export default function AdversarialLab() {
                   <th className="p-3">Hardened Clf Evasion</th>
                   <th className="p-3">Baseline Hybrid Evasion</th>
                   <th className="p-3">Hardened Hybrid Evasion</th>
+                  <th className="p-3">Adaptive Hardened Ev</th>
                   <th className="p-3">Hardened Recall</th>
                   <th className="p-3">Evasion Reduction</th>
                 </tr>
@@ -566,6 +593,11 @@ export default function AdversarialLab() {
                       <td className="p-3 text-emerald-400 font-bold">{(row.hardened_classifier_evasion * 100).toFixed(1)}%</td>
                       <td className="p-3 text-slate-400">{(row.baseline_hybrid_evasion * 100).toFixed(1)}%</td>
                       <td className="p-3 text-slate-200">{(row.hardened_hybrid_evasion * 100).toFixed(1)}%</td>
+                      <td className="p-3 text-amber-300">
+                        {row.adaptive_hardened_hybrid_evasion != null
+                          ? `${(row.adaptive_hardened_hybrid_evasion * 100).toFixed(1)}%`
+                          : '—'}
+                      </td>
                       <td className="p-3 text-indigo-400">{(row.hardened_attack_recall * 100).toFixed(1)}%</td>
                       <td className="p-3">
                         <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
@@ -576,7 +608,7 @@ export default function AdversarialLab() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="p-4 text-center text-slate-500 font-mono">
+                    <td colSpan={9} className="p-4 text-center text-slate-500 font-mono">
                       Loading benchmark matrix...
                     </td>
                   </tr>

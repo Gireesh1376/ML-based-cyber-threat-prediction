@@ -43,6 +43,7 @@ const CATEGORIES = [
 export default function ZeroDayLab() {
   const [presets, setPresets] = useState<Record<string, Record<string, string | number>>>({})
   const [form, setForm] = useState<Record<string, string | number>>({})
+  const [selectedPresetKey, setSelectedPresetKey] = useState<string | null>('benign_web')
   const [activeCategory, setActiveCategory] = useState<'network' | 'host' | 'traffic'>('network')
   const [result, setResult] = useState<DetectResult | null>(null)
   const [activeExplainTab, setActiveExplainTab] = useState<'shap' | 'anomaly'>('anomaly')
@@ -52,9 +53,12 @@ export default function ZeroDayLab() {
   useEffect(() => {
     getSchema().then((s) => {
       setPresets(s.presets)
-      setForm(s.presets.benign_web)
-      // Score initial preset
-      detectFlow(s.presets.benign_web).then(setResult).catch(() => {})
+      setSelectedPresetKey('benign_web')
+      if (s.presets.benign_web) {
+        setForm({ ...s.presets.benign_web })
+        // Score initial preset with complete feature vector
+        detectFlow(s.presets.benign_web).then(setResult).catch(() => {})
+      }
     })
   }, [])
 
@@ -73,7 +77,8 @@ export default function ZeroDayLab() {
 
   function applyPreset(key: string) {
     if (presets[key]) {
-      setForm(presets[key])
+      setSelectedPresetKey(key)
+      setForm({ ...presets[key] })
       detectFlow(presets[key]).then(setResult).catch(() => {})
     }
   }
@@ -112,7 +117,11 @@ export default function ZeroDayLab() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {Object.entries(PRESET_DESCRIPTIONS).map(([key, meta]) => {
             const Icon = meta.icon
-            const isSelected = JSON.stringify(form) === JSON.stringify(presets[key])
+            const isSelected = selectedPresetKey === key || (
+              Boolean(presets[key]) &&
+              Object.keys(presets[key]).length > 0 &&
+              Object.keys(presets[key]).every((k) => form[k] === presets[key][k])
+            )
 
             return (
               <button
@@ -156,7 +165,7 @@ export default function ZeroDayLab() {
             <button
               onClick={runDetection}
               disabled={busy}
-              className="py-2 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 font-bold text-xs hover:from-cyan-400 hover:to-teal-400 transition-all flex items-center gap-1.5 shadow-md shadow-cyan-500/20 disabled:opacity-50"
+              className="py-2 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 font-bold text-xs hover:from-cyan-400 hover:to-teal-400 transition-all flex items-center gap-1.5 shadow-md shadow-cyan-500/20 disabled:opacity-50 cursor-pointer"
             >
               <Play size={14} className="fill-current" />
               <span>{busy ? 'Evaluating...' : 'Run Detector'}</span>
@@ -169,7 +178,7 @@ export default function ZeroDayLab() {
               <button
                 key={id}
                 onClick={() => setActiveCategory(id as any)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
                   activeCategory === id
                     ? 'bg-white/15 text-white border border-white/20'
                     : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -190,9 +199,10 @@ export default function ZeroDayLab() {
                 </label>
                 <input
                   type="text"
-                  value={form[key] ?? ''}
+                  value={form[key] !== undefined && form[key] !== null ? form[key] : ''}
                   onChange={(e) => {
                     const raw = e.target.value
+                    setSelectedPresetKey(null)
                     setForm((prev) => ({
                       ...prev,
                       [key]: Number.isNaN(Number(raw)) || raw === '' ? raw : Number(raw),
@@ -270,6 +280,12 @@ export default function ZeroDayLab() {
                     <span>Baseline Normal</span>
                     <span>{anomalyRatio.toFixed(2)}× Threshold Ratio</span>
                   </div>
+                  {!isZeroDay && result.reconstruction_error > reconThreshold && (
+                    <div className="pt-1.5 border-t border-white/5 flex items-center justify-between text-[10px] text-emerald-400 font-mono">
+                      <span>Gate: Classifier ({(result.confidence * 100).toFixed(1)}%) ≥ Novelty Gate (90%)</span>
+                      <span className="font-semibold text-emerald-300">Known Signature Precedence</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Telemetry Grid */}

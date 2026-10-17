@@ -187,6 +187,28 @@ def test_equal_inputs_give_equal_scores_deterministic():
     assert s1 == s2
 
 
+def test_deployed_cutoffs_match_validation_derived_metrics():
+    """Verify that get_tier_cutoffs loads the validation-derived cutoffs (0.5901, 0.1364)."""
+    from app.ml.detector import get_tier_cutoffs
+
+    deployed = get_tier_cutoffs()
+    assert deployed["critical"] == pytest.approx(0.5901, abs=1e-3)
+    assert deployed["review"] == pytest.approx(0.1364, abs=1e-3)
+    assert deployed["critical"] > deployed["review"]
+
+    # Confident normal flow is auto-logged under deployed cutoffs
+    benign_score = score(confidence=0.99, reconstruction_error=0.0, predicted="normal")
+    assert benign_score < deployed["review"], f"Benign score {benign_score} should be < {deployed['review']}"
+    assert tier_from_score(benign_score, deployed) == "auto_log"
+    # Unknown asset floor still promotes auto_log to review under deployed cutoffs
+    assert tier_from_score(benign_score, deployed, tier_floor="review") == "review"
+
+    # Confident attack reaches critical under deployed cutoffs
+    attack_score = score(confidence=0.99, reconstruction_error=2.0, predicted="dos")
+    assert attack_score >= deployed["critical"], f"Attack score {attack_score} should be >= {deployed['critical']}"
+    assert tier_from_score(attack_score, deployed) == "critical"
+
+
 def test_derive_cutoffs_uses_true_labels_and_orders_tiers():
     rng = np.random.default_rng(7)
     scores = rng.random(500)

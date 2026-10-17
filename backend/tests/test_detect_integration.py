@@ -196,3 +196,78 @@ class TestDetectEndpointConsistency:
             f"replay predicted {replay.get('predicted')} != alert {alert['predicted']}"
         )
         assert replay.get("is_zero_day") == alert.get("is_zero_day"), "is_zero_day mismatch on replay"
+
+    def test_probe_scan_preset_classified_as_known_probe_not_zero_day(self):
+        """Regression test for Zero-Day Studio Port Sweep (Probe) preset.
+
+        Port Sweep (Probe) is an ICMP sweep and must be recognized as the known
+        attack family 'probe' with high confidence (>=90%), rather than being
+        dragged below the novelty gate by an invalid logged_in=1 default.
+        """
+        from app.routers.detect import PRESETS
+
+        probe_preset = PRESETS["probe_scan"]
+        det = _post(probe_preset)
+        assert det["predicted"] == "probe", f"Expected 'probe', got {det['predicted']!r}"
+        assert det["known_class"] == "probe", f"Expected known_class 'probe', got {det['known_class']!r}"
+        assert det["is_zero_day"] is False, "Known Port Sweep should not be flagged as zero_day"
+        assert det["confidence"] >= 0.90, f"Expected confidence >= 0.90, got {det['confidence']}"
+
+    def test_flow_payload_default_logged_in_is_zero(self):
+        """FlowPayload must default logged_in to 0 (unauthenticated), avoiding impossible ICMP auth states."""
+        from app.routers.detect import FlowPayload
+
+        flow = FlowPayload(protocol_type="icmp", service="eco_i", flag="SF")
+        assert flow.logged_in == 0, f"Expected default logged_in=0, got {flow.logged_in}"
+
+    def test_all_studio_presets_match_intended_targets(self):
+        """Verify all 4 Zero-Day Studio presets match their designed classifications via /api/detect."""
+        from app.routers.detect import PRESETS
+
+        expected = {
+            "benign_web": ("normal", False),
+            "known_dos": ("dos", False),
+            "probe_scan": ("probe", False),
+            "zero_day_like": ("zero_day", True),
+        }
+        for name, (exp_label, exp_zero_day) in expected.items():
+            preset = PRESETS[name]
+            det = _post(preset)
+            assert det["predicted"] == exp_label, (
+                f"Preset {name}: expected predicted={exp_label!r}, got {det['predicted']!r}"
+            )
+            assert det["is_zero_day"] is exp_zero_day, (
+                f"Preset {name}: expected is_zero_day={exp_zero_day}, got {det['is_zero_day']}"
+            )
+
+    def test_all_studio_presets_have_complete_41_features(self):
+        """All 4 Studio presets must have complete 41-feature vectors with no null/undefined values."""
+        from app.config import FEATURE_COLUMNS
+        from app.routers.detect import PRESETS
+
+        assert len(FEATURE_COLUMNS) == 41
+        for name in ("benign_web", "known_dos", "probe_scan", "zero_day_like"):
+            preset = PRESETS[name]
+            assert len(preset) == 41, f"Preset {name} has {len(preset)} features, expected 41"
+            for col in FEATURE_COLUMNS:
+                assert col in preset, f"Missing feature {col!r} in preset {name}"
+                val = preset[col]
+                assert val is not None, f"Feature {col!r} in preset {name} is None"
+                if col not in ("protocol_type", "service", "flag"):
+                    assert isinstance(val, (int, float)), f"Feature {col!r} in {name} must be numeric, got {type(val)}"
+
+    def test_get_schema_presets_contain_all_41_features(self):
+        """GET /api/detect/schema must expose all 41 features for each preset to prevent blank inputs."""
+        from app.config import FEATURE_COLUMNS
+
+        schema = _get("/api/detect/schema")
+        presets = schema.get("presets", {})
+        assert len(presets) == 4
+        for name in ("benign_web", "known_dos", "probe_scan", "zero_day_like"):
+            p = presets.get(name, {})
+            assert len(p) == 41, f"Preset {name} in /api/detect/schema has {len(p)} fields, expected 41"
+            for col in FEATURE_COLUMNS:
+                assert col in p, f"Missing {col!r} in schema preset {name}"
+                assert p[col] is not None, f"Schema preset {name} field {col!r} is None"
+
+

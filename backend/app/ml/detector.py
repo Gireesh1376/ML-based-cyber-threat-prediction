@@ -19,8 +19,8 @@ class DetectorNotReady(RuntimeError):
 
 @lru_cache(maxsize=1)
 def get_tier_cutoffs() -> dict[str, float]:
-    """Tier cutoffs from metrics.json, falling back to sane defaults."""
-    fallback = {"critical": 0.75, "review": 0.45}
+    """Tier cutoffs from metrics.json, falling back to validation-derived cutoffs."""
+    fallback = {"critical": 0.5901, "review": 0.1364}
     if not METRICS_PATH.exists():
         return fallback
     data = json.loads(METRICS_PATH.read_text(encoding="utf-8"))
@@ -28,7 +28,7 @@ def get_tier_cutoffs() -> dict[str, float]:
     return {k: float(cutoffs[k]) for k in ("critical", "review") if k in cutoffs} or fallback
 
 
-DEFAULT_CUTOFFS: dict[str, float] = {"critical": 0.75, "review": 0.45}
+DEFAULT_CUTOFFS: dict[str, float] = {"critical": 0.5901, "review": 0.1364}
 
 
 @lru_cache(maxsize=1)

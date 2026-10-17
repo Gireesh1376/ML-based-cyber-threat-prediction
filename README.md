@@ -103,22 +103,32 @@ Human-review workload **52.3%** of flows; **85.4%** of attacks and **78.2%** of 
 
 ## Problem 4 — adversarial evasion robustness
 
-Modern ML classifiers can be misled by tiny, mathematically crafted input perturbations. Attackers mutate flow characteristics (such as packet arrival timing, connection durations, payload padding, and error rates) to push attack flows across the decision boundary into `normal`.
+Modern ML classifiers can be misled by input perturbations. Attackers mutate flow characteristics (such as packet arrival timing, connection durations, payload padding, and error rates) to push attack flows across the decision boundary into `normal`.
 
-Aegis implements network-protocol-constrained adversarial sample synthesis (**DEMGAN**, **Universal Adversarial Perturbations / UAP**, and **Constrained FGSM**) and iterative adversarial retraining following the methodology of Xu et al. (2025, CMC) and Zhang et al. (2025):
+Aegis implements network-protocol-constrained adversarial sample synthesis (**Constrained FGSM**, **Universal Adversarial Perturbations / UAP**, and **DEMGAN Manifold Drift Approximation**) and iterative adversarial retraining following the methodology of Xu et al. (2025, CMC) and Zhang et al. (2025):
 
-- **Domain Invariants Enforced:** Unlike computer vision perturbations, network packets are semantically coupled. All rate features (`serror_rate`, `same_srv_rate`, etc.) are strictly clamped in $[0.0, 1.0]$, counts are non-negative discrete integers, and immutable protocol headers (`protocol_type`, `land`) are strictly preserved to maintain protocol validity.
-- **Dual-Model Resilience:** The XGBoost classifier is retrained on 243,233 augmented adversarial samples (`hybrid_detector_hardened_xgb.json` and `hybrid_detector_hardened.joblib`). Additionally, the Autoencoder anomaly layer acts as a defense-in-depth barrier: even when an attacker lowers classifier confidence, non-standard feature variance inflates reconstruction error, catching perturbed attacks as novel/zero-day anomalies.
+- **Genuine Model Feedback:**
+  - **Constrained FGSM:** Implements two-sided numerical finite difference gradients of the hybrid detector's composite evasion loss, stepping mutable features in the direction of $-\text{sign}(\nabla \mathcal{L}_{\text{evasion}})$.
+  - **Universal Adversarial Perturbation (UAP):** Optimizes a single universal shift vector against model predictions over training attack flows to maximize the multi-flow evasion rate under bounded perturbation budget $\|\mathbf{v}\|_\infty \le \epsilon$.
+  - **DEMGAN Manifold Drift Approximation:** Generative multi-feature drift towards empirical benign traffic distributions with calibrated stochastic jitter. (Note: Evaluated as an empirical manifold-drift surrogate approximation; not a trained neural GAN generator).
+- **Domain Invariants & Protocol Semantics Enforced:** Unlike computer vision perturbations, network packets are semantically coupled. All rate features (`serror_rate`, `same_srv_rate`, etc.) are strictly clamped in $[0.0, 1.0]$ with complementary sum normalization ($\text{serror} + \text{rerror} \le 1.0$), counts are discrete non-negative integers with hierarchy preservation ($\text{dst\_host\_srv\_count} \le \text{dst\_host\_count}$), UDP/ICMP traffic strictly zeroes TCP SYN error rates, and immutable protocol headers (`protocol_type`, `service`, `land`, session states) cannot be altered by packet injection.
+- **Dual-Model Resilience:** The XGBoost classifier is hardened by retraining on 149,973 clean and constraint-validated adversarial samples (`hybrid_detector_hardened_xgb.json` and `hybrid_detector_hardened.joblib`). Additionally, the Autoencoder anomaly layer acts as a defense-in-depth barrier: even when an attacker lowers classifier confidence, non-standard feature variance inflates reconstruction error, catching perturbed attacks as novel/zero-day anomalies.
 
-### Adversarial Robustness Benchmark (Official Test Set):
+### Adversarial Robustness Benchmark (Official Test Set, Held-Out Split):
 
 | Metric | Baseline Model | Hardened Retrained Model | Delta / Benefit |
 | --- |:---:|:---:|:---:|
-| **Clean Attack Recall** | 87.67% | **87.60%** | Zero degradation on clean traffic |
-| **Classifier Evasion (DEMGAN $\epsilon = 0.20$)** | 26.60% | **13.13%** | **Evasion cut in half (-50.6%)** |
-| **Hybrid Evasion Rate** | 13.93% | **7.53%** | **45.9% Evasion Reduction** |
-| **Attack Recall under Attack** | 86.07% | **92.47%** | Significant attack preservation |
+| **Clean Attack Recall** | 87.67% | **87.60%** | Zero clean degradation (-0.07% abs) |
+| **Clean Binary Accuracy** | 89.80% | **89.77%** | Clean performance preserved (-0.03% abs) |
 | **Benign False Alarm Rate (FPR)** | 8.07% | **8.07%** | **0.0% False Alarm Penalty** |
+| **FGSM Classifier Evasion ($\epsilon = 0.20$)** | 83.13% | **14.47%** | **-68.7% abs (-82.6% relative drop)** |
+| **FGSM Hybrid Evasion ($\epsilon = 0.20$)** | 18.53% | **8.20%** | **+55.8% Evasion Mitigation** |
+| **UAP Classifier Evasion ($\epsilon = 0.20$)** | 90.07% | **1.73%** | **-88.3% abs (Transfer UAP neutralized)** |
+| **UAP Hybrid Evasion ($\epsilon = 0.20$)** | 16.07% | **1.67%** | **+89.6% Evasion Mitigation** |
+| **DEMGAN Hybrid Evasion ($\epsilon = 0.20$)** | 15.07% | **10.73%** | **+28.8% Evasion Mitigation** |
+| **Adaptive FGSM Hardened Evasion** | — | **11.60%** | Evaluated directly against hardened detector |
+| **Adaptive UAP Hardened Evasion** | — | **10.40%** | Hardened UAP vector against complete detector |
+| **Constraint Validity Rate** | 100.0% | **100.0%** | 13,500/13,500 flows pass all network invariants |
 
 ## Alignment notes (project documents vs implementation)
 
