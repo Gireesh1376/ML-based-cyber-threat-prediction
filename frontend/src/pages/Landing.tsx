@@ -102,7 +102,7 @@ export default function Landing() {
                 <div className="p-3.5 rounded-xl bg-slate-900/60 border border-white/5 hover:border-white/15 transition-all">
                   <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Test Accuracy</div>
                   <div className="text-2xl font-bold text-white mt-1 font-mono">
-                    {summary?.kpis?.test_accuracy ? `${(summary.kpis.test_accuracy * 100).toFixed(2)}%` : '87.45%'}
+                    {summary?.kpis?.test_accuracy != null ? `${(summary.kpis.test_accuracy * 100).toFixed(2)}%` : '—'}
                   </div>
                   <div className="text-[10px] text-slate-500 mt-1">Official NSL-KDD Test Split</div>
                 </div>
@@ -110,7 +110,7 @@ export default function Landing() {
                 <div className="p-3.5 rounded-xl bg-slate-900/60 border border-white/5 hover:border-white/15 transition-all">
                   <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Zero-Day Catch</div>
                   <div className="text-2xl font-bold text-cyan-400 mt-1 font-mono">
-                    {summary?.kpis?.zero_day_detection_rate ? `${(summary.kpis.zero_day_detection_rate * 100).toFixed(1)}%` : '76.4%'}
+                    {summary?.kpis?.zero_day_detection_rate != null ? `${(summary.kpis.zero_day_detection_rate * 100).toFixed(1)}%` : '—'}
                   </div>
                   <div className="text-[10px] text-slate-500 mt-1">Held-Out Attack Families</div>
                 </div>
@@ -118,7 +118,7 @@ export default function Landing() {
                 <div className="p-3.5 rounded-xl bg-slate-900/60 border border-white/5 hover:border-white/15 transition-all">
                   <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Auto-Logged Rate</div>
                   <div className="text-2xl font-bold text-emerald-400 mt-1 font-mono">
-                    {summary?.kpis?.auto_logged_share ? `${(summary.kpis.auto_logged_share * 100).toFixed(1)}%` : '47.7%'}
+                    {summary?.kpis?.auto_logged_share != null ? `${(summary.kpis.auto_logged_share * 100).toFixed(1)}%` : '—'}
                   </div>
                   <div className="text-[10px] text-slate-500 mt-1">Fatigue Reduction Ratio</div>
                 </div>
@@ -126,7 +126,7 @@ export default function Landing() {
                 <div className="p-3.5 rounded-xl bg-slate-900/60 border border-white/5 hover:border-white/15 transition-all">
                   <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Critical Precision</div>
                   <div className="text-2xl font-bold text-rose-400 mt-1 font-mono">
-                    93.71%
+                    {summary?.problem3?.per_tier?.critical?.precision != null ? `${(summary.problem3.per_tier.critical.precision * 100).toFixed(2)}%` : '—'}
                   </div>
                   <div className="text-[10px] text-slate-500 mt-1">High-Confidence Threat Tier</div>
                 </div>
@@ -188,12 +188,16 @@ export default function Landing() {
               <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
                 <div className="p-2.5 rounded-xl bg-slate-900/60 border border-white/5 space-y-0.5">
                   <span className="text-[10px] text-slate-400">Attack Recall</span>
-                  <div className="text-base font-bold text-cyan-300 font-mono">84.1%</div>
+                  <div className="text-base font-bold text-cyan-300 font-mono">
+                    {summary?.kpis?.test_recall != null ? `${(summary.kpis.test_recall * 100).toFixed(1)}%` : '—'}
+                  </div>
                   <span className="text-[9px] text-slate-500">vs ≤ 65.9% sup.</span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-slate-900/60 border border-white/5 space-y-0.5">
                   <span className="text-[10px] text-slate-400">Zero-Day Catch</span>
-                  <div className="text-base font-bold text-cyan-300 font-mono">76.4%</div>
+                  <div className="text-base font-bold text-cyan-300 font-mono">
+                    {summary?.kpis?.zero_day_detection_rate != null ? `${(summary.kpis.zero_day_detection_rate * 100).toFixed(1)}%` : '—'}
+                  </div>
                   <span className="text-[9px] text-slate-500">vs ≤ 43.4% base</span>
                 </div>
               </div>
@@ -234,13 +238,19 @@ export default function Landing() {
               <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
                 <div className="p-2.5 rounded-xl bg-slate-900/60 border border-white/5 space-y-0.5">
                   <span className="text-[10px] text-slate-400">Workload Drop</span>
-                  <div className="text-base font-bold text-emerald-300 font-mono">47.7%</div>
+                  <div className="text-base font-bold text-emerald-300 font-mono">
+                    {summary?.problem3?.workload?.auto_logged_share != null ? `${(summary.problem3.workload.auto_logged_share * 100).toFixed(1)}%` : '—'}
+                  </div>
                   <span className="text-[9px] text-slate-500">Auto-logged flows</span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-slate-900/60 border border-white/5 space-y-0.5">
                   <span className="text-[10px] text-slate-400">Critical Precision</span>
-                  <div className="text-base font-bold text-emerald-300 font-mono">93.7%</div>
-                  <span className="text-[9px] text-slate-500">85.4% attacks kept</span>
+                  <div className="text-base font-bold text-emerald-300 font-mono">
+                    {summary?.problem3?.per_tier?.critical?.precision != null ? `${(summary.problem3.per_tier.critical.precision * 100).toFixed(1)}%` : '—'}
+                  </div>
+                  <span className="text-[9px] text-slate-500">
+                    {summary?.problem3?.threat_preservation?.attacks_in_human_tiers != null ? `${(summary.problem3.threat_preservation.attacks_in_human_tiers * 100).toFixed(1)}% attacks kept` : '—'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -273,20 +283,26 @@ export default function Landing() {
                   Adversarial Evasion Robustness
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Hardens the ensemble against generative evasion (DEMGAN, UAP) using domain-constrained synthetic perturbations and iterative retraining.
+                  Hardens the ensemble against manifold-drift evasion (DEMGAN surrogate, UAP, FGSM) using domain-constrained synthetic perturbations and adversarial retraining.
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
                 <div className="p-2.5 rounded-xl bg-slate-900/60 border border-white/5 space-y-0.5">
                   <span className="text-[10px] text-slate-400">Evasion Drop</span>
-                  <div className="text-base font-bold text-rose-300 font-mono">45.9%</div>
-                  <span className="text-[9px] text-slate-500">Under DEMGAN</span>
+                  <div className="text-base font-bold text-rose-300 font-mono">
+                    {summary?.adversarial?.summary?.evasion_reduction_pct != null ? `${summary.adversarial.summary.evasion_reduction_pct}%` : '—'}
+                  </div>
+                  <span className="text-[9px] text-slate-500">Under DEMGAN (ε=0.20)</span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-slate-900/60 border border-white/5 space-y-0.5">
                   <span className="text-[10px] text-slate-400">Hardened Recall</span>
-                  <div className="text-base font-bold text-rose-300 font-mono">92.5%</div>
-                  <span className="text-[9px] text-slate-500">0% FPR penalty</span>
+                  <div className="text-base font-bold text-rose-300 font-mono">
+                    {summary?.adversarial?.summary?.hardened_attack_recall != null ? `${(summary.adversarial.summary.hardened_attack_recall * 100).toFixed(1)}%` : '—'}
+                  </div>
+                  <span className="text-[9px] text-slate-500">
+                    {summary?.adversarial?.clean_metrics?.fpr_penalty != null ? `${(summary.adversarial.clean_metrics.fpr_penalty * 100).toFixed(1)}% FPR penalty` : '—'}
+                  </span>
                 </div>
               </div>
             </div>

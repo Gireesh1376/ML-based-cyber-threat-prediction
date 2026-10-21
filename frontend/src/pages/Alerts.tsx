@@ -6,7 +6,8 @@ import {
   X, 
   RotateCw, 
   ArrowUpRight, 
-  CheckCircle2
+  CheckCircle2,
+  Database
 } from 'lucide-react'
 import { getAlerts, type AlertItem, type AlertsResponse } from '../api'
 import { ScrollSection } from '../components/ScrollSection'
@@ -117,12 +118,19 @@ export default function Alerts() {
           <div className="flex items-center gap-2 mb-1.5">
             <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">Problem 3 · Triage Engine</span>
             <span className="text-slate-600">·</span>
-            <span className="text-xs font-mono text-slate-400">{items.length} Sample Replay Flows</span>
+            <span className="text-xs font-mono text-slate-400">
+              {data.source === 'elasticsearch' ? `${items.length} Live Indexed Incidents` : `${items.length} Local Seed Flows`}
+            </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Incident Prioritisation Queue</h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="glass-pill px-3 py-1.5 rounded-xl text-xs font-mono text-slate-300 flex items-center gap-2">
+            <Database size={13} className={data.source === 'elasticsearch' ? 'text-cyan-400' : 'text-amber-400'} />
+            <span>Store: <strong className={data.source === 'elasticsearch' ? 'text-cyan-300' : 'text-amber-300'}>{data.source === 'elasticsearch' ? 'Elasticsearch (Live)' : 'Local Fallback'}</strong></span>
+          </div>
+
           <div className="glass-pill px-3 py-1.5 rounded-xl text-xs font-mono text-slate-300">
             Cutoffs: <span className="text-rose-400 font-semibold">Crit ≥ {data.tier_cutoffs.critical?.toFixed(3)}</span> · <span className="text-amber-400 font-semibold">Rev ≥ {data.tier_cutoffs.review?.toFixed(3)}</span>
           </div>

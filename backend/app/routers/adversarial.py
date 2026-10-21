@@ -3,7 +3,7 @@ FastAPI router for Problem 4: Adversarial Evasion Robustness & Defense Lab.
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
@@ -16,13 +16,16 @@ from app.routers.detect import PRESETS
 
 router = APIRouter(prefix="/api/adversarial", tags=["adversarial"])
 
+SUPPORTED_METHODS = ("fgsm", "uap", "demgan")
+SupportedMethod = Literal["fgsm", "uap", "demgan"]
+
 
 class AdversarialSimulateRequest(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     preset: str | None = Field(default=None, description="Optional preset name (e.g. known_dos, probe_scan)")
     flow: dict[str, Any] | None = Field(default=None, description="Raw network flow attributes")
-    method: str = Field(default="demgan", description="Perturbation method: demgan, uap, or fgsm")
+    method: SupportedMethod = Field(default="demgan", description="Perturbation method: fgsm, uap, or demgan")
     epsilon: float = Field(default=0.20, ge=0.01, le=0.50, description="Perturbation budget ε")
     adaptive: bool = Field(default=False, description="Whether attack adapts to the hardened model directly")
 
@@ -64,6 +67,12 @@ def get_adversarial_presets() -> dict[str, Any]:
 @router.post("/simulate")
 def simulate_evasion(req: AdversarialSimulateRequest) -> dict[str, Any]:
     """Simulates adversarial flow perturbation and evaluates Baseline vs Hardened detector."""
+    if req.method not in SUPPORTED_METHODS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unsupported method '{req.method}'. Allowed methods: {list(SUPPORTED_METHODS)}",
+        )
+
     # Determine input flow
     if req.preset:
         if req.preset not in PRESETS:
@@ -83,5 +92,7 @@ def simulate_evasion(req: AdversarialSimulateRequest) -> dict[str, Any]:
             adaptive=req.adaptive,
         )
         return result
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Simulation failed: {e}")

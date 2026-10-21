@@ -1,12 +1,30 @@
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.db import check_es_connection, init_alerts_index
 from app.routers import adversarial, dashboard, detect
+
+logger = logging.getLogger("aegis")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize Elasticsearch index and demo data if available
+    try:
+        init_alerts_index()
+    except Exception as exc:
+        logger.warning("Elasticsearch startup check notice: %s", exc)
+    yield
+
 
 app = FastAPI(
     title="ML-Based Cyber Threat Prediction",
     description="Hybrid Autoencoder + XGBoost IDS focused on zero-day / unknown attacks and adversarial robustness.",
     version="0.2.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -24,4 +42,12 @@ app.include_router(adversarial.router)
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "service": "cyber-threat-prediction"}
+    es_status = check_es_connection()
+    return {
+        "status": "ok",
+        "service": "cyber-threat-prediction",
+        "database": {
+            "type": "elasticsearch",
+            "connected": es_status.get("connected", False),
+        },
+    }

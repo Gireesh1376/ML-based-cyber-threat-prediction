@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -6,6 +7,14 @@ RAW_DIR = DATA_DIR / "raw"
 MODELS_DIR = ROOT / "models"
 METRICS_PATH = MODELS_DIR / "metrics.json"
 ALERTS_PATH = MODELS_DIR / "demo_alerts.json"
+
+# Elasticsearch Database Configuration
+ELASTICSEARCH_URL = os.getenv("ELASTICSEARCH_URL", "http://localhost:9200")
+ELASTICSEARCH_INDEX = os.getenv("ELASTICSEARCH_INDEX", "aegis-alerts")
+ELASTICSEARCH_USER = os.getenv("ELASTICSEARCH_USER", "")
+ELASTICSEARCH_PASSWORD = os.getenv("ELASTICSEARCH_PASSWORD", "")
+ELASTICSEARCH_API_KEY = os.getenv("ELASTICSEARCH_API_KEY", "")
+ELASTICSEARCH_VERIFY_CERTS = os.getenv("ELASTICSEARCH_VERIFY_CERTS", "false").lower() in ("true", "1", "yes")
 
 NSL_KDD_TRAIN_URL = (
     "https://raw.githubusercontent.com/jmnwong/NSL-KDD-Dataset/master/KDDTrain+.txt"

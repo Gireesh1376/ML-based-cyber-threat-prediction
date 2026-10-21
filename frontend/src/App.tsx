@@ -13,9 +13,12 @@ import {
   Zap,
   Lightbulb,
   Moon,
-  ShieldAlert
+  ShieldAlert,
+  Database
 } from 'lucide-react'
 import { useTheme } from './context/ThemeContext'
+import { DatabaseModal } from './components/DatabaseModal'
+import { getDbStatus, getHealth, type DbStatus } from './api'
 
 const navigationItems = [
   { to: '/', label: 'Executive Hub', icon: Home, end: true, badge: null },
@@ -30,7 +33,25 @@ const navigationItems = [
 export default function App() {
   const { theme, toggleTheme } = useTheme()
   const [collapsed, setCollapsed] = useState(false)
+  const [isDbModalOpen, setIsDbModalOpen] = useState(false)
+  const [dbStatus, setDbStatus] = useState<DbStatus | null>(null)
+  const [apiHealth, setApiHealth] = useState<'checking' | 'connected' | 'offline'>('checking')
   const location = useLocation()
+
+  useEffect(() => {
+    function checkServices() {
+      getHealth()
+        .then(() => setApiHealth('connected'))
+        .catch(() => setApiHealth('offline'))
+      getDbStatus()
+        .then(setDbStatus)
+        .catch(() => setDbStatus({ connected: false }))
+    }
+
+    checkServices()
+    const interval = setInterval(checkServices, 15000)
+    return () => clearInterval(interval)
+  }, [])
 
   // Keyboard shortcut: Press `[` or `\` to toggle sidebar
   useEffect(() => {
@@ -280,9 +301,44 @@ export default function App() {
               <span className="font-mono text-emerald-400 font-semibold">87.5% Acc</span>
             </div>
 
-            <div className="flex items-center gap-2 pl-2">
-              <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-mono text-slate-400">FastAPI Ready</span>
+            {/* Database Hub Indicator / Launcher Button */}
+            <button
+              onClick={() => setIsDbModalOpen(true)}
+              id="header-database-btn"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full glass-pill text-xs font-medium transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 group shadow-sm border border-white/10 hover:border-cyan-500/40"
+              title="Open Elasticsearch Database Hub & Alert Inspector"
+              aria-label="Open Database Hub"
+            >
+              <Database size={14} className={dbStatus?.connected ? "text-cyan-400 group-hover:rotate-12 transition-transform duration-200" : "text-amber-400"} />
+              <span className="text-slate-300 group-hover:text-white transition-colors">
+                {dbStatus?.connected
+                  ? `ES: ${dbStatus.docs_count != null ? `${dbStatus.docs_count} Alerts` : '—'}`
+                  : 'DB: Fallback'}
+              </span>
+              <span className={`w-1.5 h-1.5 rounded-full ${dbStatus?.connected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+            </button>
+
+            <div className="flex items-center gap-2 pl-1" title={`Backend API: ${apiHealth}`}>
+              <div
+                className={`h-2 w-2 rounded-full ${
+                  apiHealth === 'connected'
+                    ? 'bg-emerald-400 animate-pulse'
+                    : apiHealth === 'offline'
+                    ? 'bg-rose-500'
+                    : 'bg-amber-400 animate-pulse'
+                }`}
+              />
+              <span
+                className={`text-xs font-mono ${
+                  apiHealth === 'connected'
+                    ? 'text-slate-400'
+                    : apiHealth === 'offline'
+                    ? 'text-rose-400 font-semibold'
+                    : 'text-amber-400'
+                }`}
+              >
+                {apiHealth === 'connected' ? 'FastAPI Online' : apiHealth === 'offline' ? 'FastAPI Offline' : 'Connecting...'}
+              </span>
             </div>
           </div>
         </header>
@@ -297,6 +353,12 @@ export default function App() {
           </div>
         </main>
       </div>
+
+      {/* Elasticsearch Database Hub Modal */}
+      <DatabaseModal 
+        isOpen={isDbModalOpen} 
+        onClose={() => setIsDbModalOpen(false)} 
+      />
     </div>
   )
 }

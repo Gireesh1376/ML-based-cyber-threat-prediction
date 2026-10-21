@@ -383,6 +383,43 @@ def test_api_simulate_endpoint():
     assert data.get("constraints_valid") is True
 
 
+def test_api_simulate_endpoint_rejects_invalid_method():
+    """Regression test: verify POST /api/adversarial/simulate rejects unsupported methods with HTTP 422.
+
+    Ensures unsupported methods (e.g. unknown strings, non-implemented generators)
+    are strictly rejected with HTTP 422 Unprocessable Entity instead of silently falling back to DEMGAN.
+    """
+    # 1. Unsupported methods must return HTTP 422
+    for invalid_method in ["invalid_method", "pgd", "random_noise", "gan", "deepfool", ""]:
+        resp = client.post("/api/adversarial/simulate", json={
+            "preset": "known_dos",
+            "method": invalid_method,
+            "epsilon": 0.20,
+        })
+        assert resp.status_code == 422, (
+            f"Expected HTTP 422 for unsupported method '{invalid_method}', got {resp.status_code}: {resp.text}"
+        )
+
+    # 2. Supported methods ('fgsm', 'uap', 'demgan') must return HTTP 200
+    for valid_method in ["fgsm", "uap", "demgan"]:
+        resp = client.post("/api/adversarial/simulate", json={
+            "preset": "known_dos",
+            "method": valid_method,
+            "epsilon": 0.20,
+        })
+        assert resp.status_code == 200, (
+            f"Expected HTTP 200 for supported method '{valid_method}', got {resp.status_code}: {resp.text}"
+        )
+        assert resp.json()["method"] == valid_method
+
+
+def test_generate_adversarial_perturbation_rejects_unsupported_method():
+    """Regression test: verify generate_adversarial_perturbation raises ValueError on unsupported methods."""
+    flow = sample_to_dataframe(PRESETS["known_dos"])
+    with pytest.raises(ValueError, match="Unsupported perturbation method"):
+        generate_adversarial_perturbation(flow, method="unsupported_generator")
+
+
 def test_adversarial_metrics_schema_and_calculations():
     """Verify empirical adversarial metrics are non-trivial and derived from actual predictions."""
     metrics = load_adversarial_metrics()

@@ -1,11 +1,21 @@
+from datetime import datetime, timezone
+import logging
 from typing import Any
+from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.config import FEATURE_COLUMNS
+from app.db import (
+    get_alert_by_id,
+    store_alert,
+    store_alerts_batch,
+    validate_batch_storage_response,
+)
 from app.ml.detector import DetectorNotReady, load_demo_alerts, predict_payload
 
+logger = logging.getLogger("aegis.detect")
 router = APIRouter(tags=["detect"])
 
 
@@ -253,26 +263,144 @@ def schema():
 
 @router.post("/detect")
 def detect(payload: FlowPayload):
+    raw_dict = payload.model_dump()
     try:
-        return predict_payload(payload.model_dump())
+        result = predict_payload(raw_dict)
     except DetectorNotReady as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    # Ingest prediction as an alert into Elasticsearch
+    # Use stable alert identifier if provided in payload; otherwise generate unique ID
+    alert_id = str(raw_dict.get("id") or f"ALT-{uuid4().hex[:8].upper()}")
+    now_iso = datetime.now(timezone.utc).isoformat()
+    alert_doc = {
+        "id": alert_id,
+        "timestamp": now_iso,
+        "created_at": now_iso,
+        "src": str(raw_dict.get("src") or "10.0.1.50"),
+        "dst": str(raw_dict.get("dst") or "172.16.2.100"),
+        "protocol": str(raw_dict.get("protocol_type", "tcp")),
+        "service": str(raw_dict.get("service", "http")),
+        "true_label": str(raw_dict.get("true_label") or ("normal" if result["predicted"] == "normal" else result["predicted"])),
+        "predicted": result["predicted"],
+        "known_label": result["known_class"],
+        "confidence": float(result["confidence"]),
+        "reconstruction_error": float(result["reconstruction_error"]),
+        "is_zero_day": bool(result["is_zero_day"]),
+        "severity": result["severity"],
+        "priority": float(result["priority"]),
+        "tier": result["tier"],
+        "priority_components": result.get("priority_components", {}),
+        "asset_criticality": float(result.get("asset_criticality", 0.5)),
+        "asset_criticality_known": bool(result.get("asset_criticality_known", True)),
+        "tier_reason": result.get("tier_reason", ""),
+        "rationale": result.get("rationale", ""),
+        "tier_floor_applied": bool(result.get("tier_floor_applied")),
+        "dq_flags": result.get("dq_flags", []),
+        "flow": {k: raw_dict[k] for k in FEATURE_COLUMNS if k in raw_dict},
+        "top_features": result.get("top_features", []),
+        "anomaly_features": result.get("anomaly_features", []),
+    }
+
+    try:
+        store_alert(alert_doc, refresh=True)
+        result["id"] = alert_id
+        result["saved_to_db"] = True
+        result["db_status"] = "stored"
+    except Exception as db_err:
+        logger.warning("Failed to store alert in Elasticsearch: %s", db_err)
+        result["id"] = alert_id
+        result["saved_to_db"] = False
+        result["db_status"] = f"error: {db_err}"
+
+    return result
 
 
 @router.post("/detect/batch")
 def detect_batch(payload: BatchPayload):
     try:
-        return {"results": [predict_payload(flow) for flow in payload.flows[:50]]}
+        results = []
+        alerts_to_store = []
+        now_iso = datetime.now(timezone.utc).isoformat()
+        for flow in payload.flows[:50]:
+            pred = predict_payload(flow)
+            alert_id = str(flow.get("id") or f"ALT-{uuid4().hex[:8].upper()}")
+            alert_doc = {
+                "id": alert_id,
+                "timestamp": now_iso,
+                "created_at": now_iso,
+                "src": str(flow.get("src") or "10.0.1.50"),
+                "dst": str(flow.get("dst") or "172.16.2.100"),
+                "protocol": str(flow.get("protocol_type", "tcp")),
+                "service": str(flow.get("service", "http")),
+                "true_label": str(flow.get("true_label") or ("normal" if pred["predicted"] == "normal" else pred["predicted"])),
+                "predicted": pred["predicted"],
+                "known_label": pred["known_class"],
+                "confidence": float(pred["confidence"]),
+                "reconstruction_error": float(pred["reconstruction_error"]),
+                "is_zero_day": bool(pred["is_zero_day"]),
+                "severity": pred["severity"],
+                "priority": float(pred["priority"]),
+                "tier": pred["tier"],
+                "priority_components": pred.get("priority_components", {}),
+                "asset_criticality": float(pred.get("asset_criticality", 0.5)),
+                "asset_criticality_known": bool(pred.get("asset_criticality_known", True)),
+                "tier_reason": pred.get("tier_reason", ""),
+                "rationale": pred.get("rationale", ""),
+                "tier_floor_applied": bool(pred.get("tier_floor_applied")),
+                "dq_flags": pred.get("dq_flags", []),
+                "flow": {k: flow[k] for k in FEATURE_COLUMNS if k in flow},
+                "top_features": pred.get("top_features", []),
+                "anomaly_features": pred.get("anomaly_features", []),
+            }
+            pred["id"] = alert_id
+            results.append(pred)
+            alerts_to_store.append(alert_doc)
+
+        if alerts_to_store:
+            try:
+                batch_res = store_alerts_batch(alerts_to_store, refresh=True)
+                submitted_ids = {str(r.get("id")) for r in results}
+                is_valid, reason, success_ids, failed_ids = validate_batch_storage_response(batch_res, submitted_ids)
+                for r in results:
+                    r_id = str(r.get("id"))
+                    if r_id in failed_ids:
+                        r["saved_to_db"] = False
+                        r["db_status"] = f"error: {failed_ids[r_id]}"
+                    elif is_valid and r_id in success_ids:
+                        r["saved_to_db"] = True
+                        r["db_status"] = "stored"
+                    else:
+                        r["saved_to_db"] = False
+                        reason_msg = reason or "document unconfirmed in batch response"
+                        r["db_status"] = f"uncertain: batch storage response inconsistent ({reason_msg})"
+            except Exception as exc:
+                logger.warning("Batch alert storage failed in Elasticsearch: %s", exc)
+                for r in results:
+                    r["saved_to_db"] = False
+                    r["db_status"] = f"error: {exc}"
+
+        return {"results": results}
     except DetectorNotReady as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @router.post("/detect/replay/{alert_id}")
 def replay(alert_id: str):
-    alerts = load_demo_alerts()
-    match = next((a for a in alerts if a["id"] == alert_id), None)
+    # Check Elasticsearch first
+    match = None
+    try:
+        match = get_alert_by_id(alert_id)
+    except Exception as exc:
+        logger.warning("Could not check Elasticsearch for replay alert '%s': %s", alert_id, exc)
+
+    if not match:
+        alerts = load_demo_alerts()
+        match = next((a for a in alerts if a["id"] == alert_id), None)
+
     if not match:
         raise HTTPException(status_code=404, detail="Alert not found")
+
     flow = match.get("flow")
     if flow:
         # Exact replay: the alert carries its full feature payload.

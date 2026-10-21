@@ -194,23 +194,27 @@ export default function Overview() {
                 {fmtPercent(p3w?.auto_logged_share ?? data.kpis?.auto_logged_share)}
               </div>
               <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-white/5">
-                <span>Workload Saved:</span>
-                <span className="font-mono text-emerald-300 font-semibold">10,746 Flows Auto-Logged</span>
+                <span>Benchmark Workload Saved:</span>
+                <span className="font-mono text-emerald-300 font-semibold">
+                  {p3w?.tier_counts?.auto_log != null ? `${p3w.tier_counts.auto_log.toLocaleString()} / 22,544 Flows` : '10,746 / 22,544 Flows'}
+                </span>
               </div>
             </div>
 
             {/* KPI 3 */}
             <div className="glass-card p-5 space-y-2 border border-white/10 hover:border-rose-500/20 transition-all">
               <div className="flex items-center justify-between text-xs text-slate-400">
-                <span className="font-medium uppercase tracking-wider">Critical Tier Load</span>
+                <span className="font-medium uppercase tracking-wider">Live Critical Queue</span>
                 <ShieldAlert size={15} className="text-rose-400" />
               </div>
               <div className="text-3xl font-bold font-mono text-rose-400">
-                {p3w?.tier_counts?.critical?.toLocaleString() ?? data.kpis?.critical_tier_alerts?.toLocaleString() ?? '10,177'}
+                {data.kpis?.critical_tier_alerts != null ? `${data.kpis.critical_tier_alerts.toLocaleString()} Alerts` : '—'}
               </div>
               <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-white/5">
-                <span>Immediate Action Precision:</span>
-                <span className="font-mono text-rose-300 font-semibold">93.7%</span>
+                <span>Benchmark Target:</span>
+                <span className="font-mono text-rose-300 font-semibold">
+                  {p3w?.tier_counts?.critical?.toLocaleString() ?? '10,177'} flows · {fmtPercent(p3?.per_tier?.critical?.precision ?? 0.9371)} prec
+                </span>
               </div>
             </div>
 
@@ -366,10 +370,12 @@ export default function Overview() {
                 <div className="flex items-center justify-between mb-1">
                   <h2 className="text-base font-semibold text-white tracking-tight">Autonomous Tiered Triage Funnel</h2>
                   <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                    5-Factor Composite
+                    Offline Benchmark Evaluation
                   </span>
                 </div>
-                <p className="text-xs text-slate-400">Priority cutoffs frozen on validation true labels: Critical ≥ 0.590, Review ≥ 0.136.</p>
+                <p className="text-xs text-slate-400">
+                  Evaluated across {(data.test_rows ?? 22544).toLocaleString()} official test flows. Cutoffs frozen on validation true labels: Critical ≥ {data.prioritisation?.tier_cutoffs?.critical?.toFixed(3) ?? '0.590'}, Review ≥ {data.prioritisation?.tier_cutoffs?.review?.toFixed(3) ?? '0.136'}.
+                </p>
               </div>
 
               <div className="space-y-3.5 my-auto">
@@ -378,16 +384,16 @@ export default function Overview() {
                   <div className="flex items-center justify-between text-xs font-semibold">
                     <span className="flex items-center gap-2 text-rose-300">
                       <span className="w-2 h-2 rounded-full bg-rose-400" />
-                      CRITICAL TIER (Immediate Analyst Action)
+                      CRITICAL TIER (Benchmark Capacity)
                     </span>
                     <span className="font-mono text-rose-300">{p3w?.tier_counts?.critical?.toLocaleString() ?? '10,177'} flows (45.1%)</span>
                   </div>
                   <div className="w-full bg-black/40 h-2 rounded-full overflow-hidden">
-                    <div className="bg-rose-500 h-full rounded-full" style={{ width: '93.7%' }} />
+                    <div className="bg-rose-500 h-full rounded-full" style={{ width: `${(p3?.per_tier?.critical?.precision ?? 0.9371) * 100}%` }} />
                   </div>
                   <div className="flex justify-between text-[11px] text-slate-400">
                     <span>Contains 9,537 true attacks</span>
-                    <span className="text-rose-400 font-medium">93.7% Tier Precision</span>
+                    <span className="text-rose-400 font-medium">{fmtPercent(p3?.per_tier?.critical?.precision ?? 0.9371)} Tier Precision</span>
                   </div>
                 </div>
 
@@ -401,11 +407,11 @@ export default function Overview() {
                     <span className="font-mono text-amber-300">{p3w?.tier_counts?.review?.toLocaleString() ?? '1,621'} flows (7.2%)</span>
                   </div>
                   <div className="w-full bg-black/40 h-2 rounded-full overflow-hidden">
-                    <div className="bg-amber-400 h-full rounded-full" style={{ width: '88.0%' }} />
+                    <div className="bg-amber-400 h-full rounded-full" style={{ width: `${(p3?.per_tier?.review?.precision ?? 0.8797) * 100}%` }} />
                   </div>
                   <div className="flex justify-between text-[11px] text-slate-400">
                     <span>Contains 1,426 true attacks</span>
-                    <span className="text-amber-400 font-medium">88.0% Tier Precision</span>
+                    <span className="text-amber-400 font-medium">{fmtPercent(p3?.per_tier?.review?.precision ?? 0.8797)} Tier Precision</span>
                   </div>
                 </div>
 

@@ -89,6 +89,28 @@ export type Summary = {
   detection_comparison?: Record<string, any>
   zero_day?: Record<string, any>
   reconstruction_threshold?: number
+  adversarial?: {
+    summary?: {
+      method?: string
+      description?: string
+      epsilon?: number
+      baseline_evasion_rate?: number
+      hardened_evasion_rate?: number
+      baseline_clf_evasion?: number
+      hardened_clf_evasion?: number
+      evasion_reduction_pct?: number
+      hardened_attack_recall?: number
+      adaptive_hardened_evasion_rate?: number
+      adaptive_hardened_clf_evasion?: number
+    }
+    clean_metrics?: {
+      baseline_attack_recall?: number
+      hardened_attack_recall?: number
+      baseline_fpr?: number
+      hardened_fpr?: number
+      fpr_penalty?: number
+    }
+  }
 }
 
 type Tier = 'critical' | 'review' | 'auto_log'
@@ -121,6 +143,7 @@ export type AlertsResponse = {
   items: AlertItem[]
   count: number
   tier_cutoffs: Record<string, number>
+  source?: 'elasticsearch' | 'local_fallback' | string
 }
 
 export async function getAlerts(params?: { tier?: string; sort?: string; limit?: number }): Promise<AlertsResponse> {
@@ -301,6 +324,38 @@ export async function simulateAdversarial(payload: {
     const err = await res.json().catch(() => ({}))
     throw new Error(err.detail || 'Adversarial simulation failed')
   }
+  return res.json()
+}
+
+export type DbStatus = {
+  connected: boolean
+  version?: string
+  cluster_name?: string
+  url?: string
+  index?: string
+  index_exists?: boolean
+  docs_count?: number
+  error?: string
+}
+
+export async function getDbStatus(): Promise<DbStatus> {
+  const res = await fetch(`${API}/api/db/status`)
+  if (!res.ok) throw new Error('Failed to load database status')
+  return res.json()
+}
+
+export type HealthStatus = {
+  status: string
+  service: string
+  database: {
+    type: string
+    connected: boolean
+  }
+}
+
+export async function getHealth(): Promise<HealthStatus> {
+  const res = await fetch(`${API}/api/health`)
+  if (!res.ok) throw new Error('Health check failed')
   return res.json()
 }
 

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { 
   Radar, 
   Lock, 
@@ -6,76 +7,127 @@ import {
   ArrowRight
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { getSummary, type Summary } from '../api'
 import { ScrollSection } from '../components/ScrollSection'
 
-const problems = [
-  {
-    id: 'P1',
-    title: 'Zero-Day / Unknown Attack Detection',
-    subtitle: 'Dual-Model Autoencoder + XGBoost Hybrid',
-    status: 'Implemented',
-    badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-    icon: Radar,
-    metrics: [
-      { label: 'Test Accuracy', val: '87.45%' },
-      { label: 'Attack Recall', val: '84.13%' },
-      { label: 'Zero-Day Catch', val: '76.37%' },
-    ],
-    body: 'An unsupervised neural network autoencoder learns normal traffic baseline. XGBoost scores known attack families. High reconstruction error with weak known-class confidence promotes flows into novel zero-days, complemented by SHAP explanations and per-feature error decomposition.',
-    link: '/zero-day',
-    linkLabel: 'Test in Zero-Day Studio',
-  },
-  {
-    id: 'P2',
-    title: 'Encrypted TLS / QUIC Traffic Blind Spot',
-    subtitle: 'Metadata-Driven CNN-BiLSTM (No-Decryption)',
-    status: 'Phase 2 (Planned)',
-    badgeClass: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
-    icon: Lock,
-    metrics: [
-      { label: 'Target Protocol', val: 'TLS 1.3 / ECH' },
-      { label: 'Architecture', val: 'CNN-BiLSTM' },
-      { label: 'Features', val: 'SPLT + JA4' },
-    ],
-    body: 'Privacy-preserving encrypted traffic analysis using packet length sequences, burst timing (SPLT), and TLS handshake attributes without intercepting or decrypting payload contents, conforming to NIST SP 1800-37 guidelines.',
-    link: null,
-    linkLabel: null,
-  },
-  {
-    id: 'P3',
-    title: 'Alert Fatigue & Prioritisation',
-    subtitle: 'Composite Priority Score & Tiered Triage Flow',
-    status: 'Implemented',
-    badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-    icon: BellRing,
-    metrics: [
-      { label: 'Auto-Log Rate', val: '47.67%' },
-      { label: 'Critical Precision', val: '93.71%' },
-      { label: 'Human Capture', val: '85.43%' },
-    ],
-    body: 'Automates 47.7% of routine traffic via normalized 5-factor composite priority (class-aware confidence + reconstruction anomaly + threat severity + asset criticality + zero-day bonus). Features an unknown-service Review floor ensuring unmapped assets are never silently auto-logged.',
-    link: '/alerts',
-    linkLabel: 'Open Triage Console',
-  },
-  {
-    id: 'P4',
-    title: 'Adversarial Evasion Robustness',
-    subtitle: 'Constrained Perturbations & Adversarial Retraining',
-    status: 'Implemented',
-    badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    icon: ShieldAlert,
-    metrics: [
-      { label: 'Evasion Mitigation', val: '45.9%' },
-      { label: 'Hardened Recall', val: '92.5%' },
-      { label: 'FPR Penalty', val: '0.0%' },
-    ],
-    body: 'Hardens the tree-ensemble core against generative evasion attacks (such as DEMGAN and universal perturbations) using network-protocol constrained adversarial sample synthesis and iterative retraining passes.',
-    link: '/adversarial',
-    linkLabel: 'Open Defense Studio',
-  },
-]
-
 export default function Roadmap() {
+  const [summary, setSummary] = useState<Summary | null>(null)
+
+  useEffect(() => {
+    getSummary().then(setSummary).catch(() => setSummary(null))
+  }, [])
+
+  const problems = [
+    {
+      id: 'P1',
+      title: 'Zero-Day / Unknown Attack Detection',
+      subtitle: 'Dual-Model Autoencoder + XGBoost Hybrid',
+      status: 'Implemented',
+      badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+      icon: Radar,
+      metrics: [
+        {
+          label: 'Test Accuracy',
+          val: summary?.kpis?.test_accuracy != null
+            ? `${(summary.kpis.test_accuracy * 100).toFixed(2)}%`
+            : '87.45% (Saved Ref)',
+        },
+        {
+          label: 'Attack Recall',
+          val: summary?.kpis?.test_recall != null
+            ? `${(summary.kpis.test_recall * 100).toFixed(2)}%`
+            : '84.13% (Saved Ref)',
+        },
+        {
+          label: 'Zero-Day Catch',
+          val: summary?.kpis?.zero_day_detection_rate != null
+            ? `${(summary.kpis.zero_day_detection_rate * 100).toFixed(2)}%`
+            : '76.37% (Saved Ref)',
+        },
+      ],
+      body: 'An unsupervised neural network autoencoder learns normal traffic baseline. XGBoost scores known attack families. High reconstruction error with weak known-class confidence promotes flows into novel zero-days, complemented by SHAP explanations and per-feature error decomposition.',
+      link: '/zero-day',
+      linkLabel: 'Test in Zero-Day Studio',
+    },
+    {
+      id: 'P2',
+      title: 'Encrypted TLS / QUIC Traffic Blind Spot',
+      subtitle: 'Metadata-Driven CNN-BiLSTM (No-Decryption)',
+      status: 'Phase 2 (Planned)',
+      badgeClass: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+      icon: Lock,
+      metrics: [
+        { label: 'Target Protocol', val: 'TLS 1.3 / ECH' },
+        { label: 'Architecture', val: 'CNN-BiLSTM' },
+        { label: 'Features', val: 'SPLT + JA4' },
+      ],
+      body: 'Privacy-preserving encrypted traffic analysis using packet length sequences, burst timing (SPLT), and TLS handshake attributes without intercepting or decrypting payload contents, conforming to NIST SP 1800-37 guidelines.',
+      link: null,
+      linkLabel: null,
+    },
+    {
+      id: 'P3',
+      title: 'Alert Fatigue & Prioritisation',
+      subtitle: 'Composite Priority Score & Tiered Triage Flow',
+      status: 'Implemented',
+      badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+      icon: BellRing,
+      metrics: [
+        {
+          label: 'Auto-Log Rate',
+          val: summary?.problem3?.workload?.auto_logged_share != null
+            ? `${(summary.problem3.workload.auto_logged_share * 100).toFixed(2)}%`
+            : '47.67% (Saved Ref)',
+        },
+        {
+          label: 'Critical Precision',
+          val: summary?.problem3?.per_tier?.critical?.precision != null
+            ? `${(summary.problem3.per_tier.critical.precision * 100).toFixed(2)}%`
+            : '93.71% (Saved Ref)',
+        },
+        {
+          label: 'Human Capture',
+          val: summary?.problem3?.threat_preservation?.attacks_in_human_tiers != null
+            ? `${(summary.problem3.threat_preservation.attacks_in_human_tiers * 100).toFixed(2)}%`
+            : '85.43% (Saved Ref)',
+        },
+      ],
+      body: 'Automates 47.7% of routine traffic via normalized 5-factor composite priority (class-aware confidence + reconstruction anomaly + threat severity + asset criticality + zero-day bonus). Features an unknown-service Review floor ensuring unmapped assets are never silently auto-logged.',
+      link: '/alerts',
+      linkLabel: 'Open Triage Console',
+    },
+    {
+      id: 'P4',
+      title: 'Adversarial Evasion Robustness',
+      subtitle: 'Constrained Perturbations & Adversarial Retraining (Saved Reference Benchmark, ε=0.20)',
+      status: 'Implemented',
+      badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+      icon: ShieldAlert,
+      metrics: [
+        {
+          label: 'Evasion Mitigation',
+          val: summary?.adversarial?.summary?.evasion_reduction_pct != null
+            ? `${summary.adversarial.summary.evasion_reduction_pct}%`
+            : '28.8% (Saved Ref)',
+        },
+        {
+          label: 'Hardened Recall',
+          val: summary?.adversarial?.summary?.hardened_attack_recall != null
+            ? `${(summary.adversarial.summary.hardened_attack_recall * 100).toFixed(1)}%`
+            : '89.3% (Saved Ref)',
+        },
+        {
+          label: 'FPR Penalty',
+          val: summary?.adversarial?.clean_metrics?.fpr_penalty != null
+            ? `${(summary.adversarial.clean_metrics.fpr_penalty * 100).toFixed(1)}%`
+            : '0.0% (Saved Ref)',
+        },
+      ],
+      body: 'Hardens the tree-ensemble core against manifold-drift evasion (DEMGAN surrogate, universal UAP, constrained FGSM) using network-protocol constrained adversarial sample synthesis and iterative retraining passes.',
+      link: '/adversarial',
+      linkLabel: 'Open Defense Studio',
+    },
+  ]
   return (
     <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-12">
       {/* Page Header */}

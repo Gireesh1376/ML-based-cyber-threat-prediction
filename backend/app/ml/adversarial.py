@@ -800,8 +800,8 @@ def generate_adversarial_perturbation(
                     shift = max(0.0, shift)
                 perturbed[col] = orig_val + shift
 
-    else:
-        # Default: DEMGAN Empirical Manifold Drift Approximation (Xu et al. 2025 surrogate)
+    elif method == "demgan":
+        # DEMGAN Empirical Manifold Drift Approximation (Xu et al. 2025 surrogate)
         # Drifts mutable features towards the empirical benign traffic centroid with calibrated jitter
         for col in RATE_COLUMNS:
             if col in perturbed.columns:
@@ -823,6 +823,11 @@ def generate_adversarial_perturbation(
                 orig_val = perturbed[col].astype(float)
                 padding = rng.uniform(0.0, epsilon * 0.5, size=len(perturbed)) * np.maximum(32.0, orig_val * 0.3)
                 perturbed[col] = orig_val + padding
+
+    else:
+        raise ValueError(
+            f"Unsupported perturbation method '{method}'. Supported methods: 'fgsm', 'uap', 'demgan'."
+        )
 
     return enforce_domain_constraints(perturbed, orig_df=df)
 

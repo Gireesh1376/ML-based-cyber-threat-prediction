@@ -38,6 +38,13 @@ export default function AdversarialLab() {
   const [busy, setBusy] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
 
+  const [lastExecutedConfig, setLastExecutedConfig] = useState<{
+    preset: string
+    method: string
+    epsilon: number
+    adaptive: boolean
+  } | null>(null)
+
   useEffect(() => {
     getAdversarialMetrics()
       .then(setMetrics)
@@ -58,6 +65,7 @@ export default function AdversarialLab() {
         adaptive,
       })
       setSimResult(res)
+      setLastExecutedConfig({ preset, method, epsilon: eps, adaptive })
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Simulation failed')
     } finally {
@@ -67,12 +75,10 @@ export default function AdversarialLab() {
 
   function handlePresetChange(presetKey: string) {
     setSelectedPreset(presetKey)
-    runSimulation(presetKey, selectedMethod, epsilon, isAdaptive)
   }
 
   function handleMethodChange(methodKey: string) {
     setSelectedMethod(methodKey)
-    runSimulation(selectedPreset, methodKey, epsilon, isAdaptive)
   }
 
   function handleEpsilonChange(val: number) {
@@ -81,8 +87,14 @@ export default function AdversarialLab() {
 
   function handleAdaptiveToggle(val: boolean) {
     setIsAdaptive(val)
-    runSimulation(selectedPreset, selectedMethod, epsilon, val)
   }
+
+  const hasPendingChanges =
+    lastExecutedConfig !== null &&
+    (lastExecutedConfig.preset !== selectedPreset ||
+      lastExecutedConfig.method !== selectedMethod ||
+      lastExecutedConfig.epsilon !== epsilon ||
+      lastExecutedConfig.adaptive !== isAdaptive)
 
   const isEvasionBlocked = simResult?.analysis.evasion_blocked ?? false
   const baselineEvaded = simResult?.analysis.baseline_evaded ?? false
@@ -106,7 +118,9 @@ export default function AdversarialLab() {
             Defense Status: <span className="text-emerald-400 font-bold">Hardened Model Online</span>
           </div>
           <div className="glass-pill px-3 py-1.5 rounded-xl text-xs font-mono text-slate-300">
-            Benchmark: <span className="text-cyan-400 font-bold">45.9% Evasion Reduction</span>
+            Benchmark: <span className="text-cyan-400 font-bold">
+              {metrics ? `${metrics.adversarial_summary.evasion_reduction_pct}% Evasion Reduction` : '—'}
+            </span>
           </div>
         </div>
       </div>
@@ -124,35 +138,42 @@ export default function AdversarialLab() {
           <div className="glass-card p-4 space-y-1 border border-white/10">
             <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Evasion Mitigation</span>
             <div className="text-2xl font-bold text-emerald-400 font-mono">
-              {metrics ? `${metrics.adversarial_summary.evasion_reduction_pct}%` : '45.9%'}
+              {metrics ? `${metrics.adversarial_summary.evasion_reduction_pct}%` : '—'}
             </div>
-            <p className="text-[11px] text-slate-500">Under DEMGAN Generative Evasion</p>
+            <p className="text-[11px] text-slate-500">Under DEMGAN Manifold Drift (ε=0.20)</p>
           </div>
 
           <div className="glass-card p-4 space-y-1 border border-white/10">
             <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Hardened Evasion Rate</span>
             <div className="text-2xl font-bold text-cyan-400 font-mono">
-              {metrics ? `${(metrics.adversarial_summary.hardened_evasion_rate * 100).toFixed(1)}%` : '7.5%'}
+              {metrics ? `${(metrics.adversarial_summary.hardened_evasion_rate * 100).toFixed(1)}%` : '—'}
             </div>
             <p className="text-[11px] text-slate-500">
-              Down from <span className="line-through text-rose-400">{metrics ? `${(metrics.adversarial_summary.baseline_evasion_rate * 100).toFixed(1)}%` : '13.9%'}</span>
+              Down from <span className="text-rose-400">{metrics ? `${(metrics.adversarial_summary.baseline_evasion_rate * 100).toFixed(1)}%` : '—'}</span>
             </p>
           </div>
 
           <div className="glass-card p-4 space-y-1 border border-white/10">
             <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Hardened Attack Recall</span>
             <div className="text-2xl font-bold text-indigo-400 font-mono">
-              {metrics ? `${(metrics.adversarial_summary.hardened_attack_recall * 100).toFixed(1)}%` : '92.5%'}
+              {metrics ? `${(metrics.adversarial_summary.hardened_attack_recall * 100).toFixed(1)}%` : '—'}
             </div>
             <p className="text-[11px] text-slate-500">Attacks Preserved under Adversarial Noise</p>
           </div>
 
           <div className="glass-card p-4 space-y-1 border border-white/10">
-            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Benign False Positive Penalty</span>
-            <div className="text-2xl font-bold text-amber-400 font-mono">
-              {metrics ? `${metrics.clean_metrics.fpr_penalty.toFixed(1)}%` : '0.0%'}
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Benign False Positive Rate</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+                {metrics ? `${(metrics.clean_metrics.fpr_penalty * 100).toFixed(1)}% Penalty` : '—'}
+              </span>
             </div>
-            <p className="text-[11px] text-slate-500">Zero False Alarm Drift on Benign Flows</p>
+            <div className="text-2xl font-bold text-amber-400 font-mono">
+              {metrics ? `${(metrics.clean_metrics.hardened_fpr * 100).toFixed(2)}%` : '—'}
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Matches baseline <span className="text-slate-300 font-mono">{metrics ? `${(metrics.clean_metrics.baseline_fpr * 100).toFixed(2)}%` : '—'}</span> (Zero Drift)
+            </p>
           </div>
         </div>
       </ScrollSection>
@@ -187,11 +208,10 @@ export default function AdversarialLab() {
                     <button
                       key={item.id}
                       onClick={() => handlePresetChange(item.id)}
-                      className={`text-left p-3 rounded-xl border transition-all cursor-pointer ${
-                        active
+                      className={`text-left p-3 rounded-xl border transition-all cursor-pointer ${active
                           ? 'bg-rose-500/10 border-rose-500/40 text-white shadow-sm shadow-rose-500/10'
                           : 'bg-white/[0.02] border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-2.5 mb-1">
                         <Icon size={15} className={active ? 'text-rose-400' : 'text-slate-500'} />
@@ -233,11 +253,10 @@ export default function AdversarialLab() {
                     <div
                       key={scheme.id}
                       onClick={() => handleMethodChange(scheme.id)}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer ${
-                        active
+                      className={`p-3 rounded-xl border transition-all cursor-pointer ${active
                           ? 'bg-indigo-500/10 border-indigo-500/40 text-white'
                           : 'bg-white/[0.02] border-white/5 text-slate-400 hover:bg-white/[0.05]'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-bold text-slate-200">{scheme.title}</span>
@@ -285,38 +304,61 @@ export default function AdversarialLab() {
               <button
                 type="button"
                 onClick={() => handleAdaptiveToggle(!isAdaptive)}
-                className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-all border cursor-pointer ${
-                  isAdaptive
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-all border cursor-pointer ${isAdaptive
                     ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-sm shadow-rose-500/20'
                     : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'
-                }`}
+                  }`}
               >
                 {isAdaptive ? 'ADAPTIVE: ON' : 'TRANSFER: BASELINE'}
               </button>
             </div>
 
+            {/* Pending changes notice */}
+            {hasPendingChanges && (
+              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">
+                <AlertTriangle size={14} className="shrink-0 text-amber-400" />
+                <span>Configuration modified. Click below to execute attack.</span>
+              </div>
+            )}
+
             {/* Re-simulate Trigger */}
             <button
-              onClick={() => runSimulation()}
+              onClick={() => runSimulation(selectedPreset, selectedMethod, epsilon, isAdaptive)}
               disabled={busy}
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-indigo-600 hover:from-rose-600 hover:to-indigo-700 text-white font-semibold text-xs tracking-wide shadow-md shadow-rose-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className={`w-full py-2.5 rounded-xl text-white font-semibold text-xs tracking-wide shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 ${hasPendingChanges
+                  ? 'bg-gradient-to-r from-rose-500 via-pink-600 to-indigo-600 hover:from-rose-600 hover:to-indigo-700 shadow-rose-500/30 ring-2 ring-rose-400/50'
+                  : 'bg-gradient-to-r from-rose-500 to-indigo-600 hover:from-rose-600 hover:to-indigo-700 shadow-rose-500/20'
+                }`}
             >
               <RefreshCw size={14} className={busy ? 'animate-spin' : ''} />
-              <span>{busy ? 'Simulating Perturbation...' : 'Run Evasion Attack'}</span>
+              <span>
+                {busy
+                  ? 'Simulating Perturbation...'
+                  : hasPendingChanges
+                    ? 'Run Evasion Attack (Apply Changes)'
+                    : 'Run Evasion Attack'}
+              </span>
             </button>
           </div>
 
           {/* Right Column: Comparative Defense Cockpit (8 cols) */}
           <div className="lg:col-span-8 space-y-5">
+            {hasPendingChanges && (
+              <div className="px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-mono flex items-center justify-between">
+                <span>Displaying previous attack results</span>
+                <span className="text-[11px] text-amber-400/80">
+                  Ready to simulate: {selectedPreset} · {selectedMethod.toUpperCase()} · ε={epsilon.toFixed(2)}
+                </span>
+              </div>
+            )}
             {/* Simulation Verdict Banner */}
             <div
-              className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${
-                isEvasionBlocked
+              className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${isEvasionBlocked
                   ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
                   : baselineEvaded
-                  ? 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-                  : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300'
-              }`}
+                    ? 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                    : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300'
+                }`}
             >
               <div className="flex items-center gap-3">
                 {isEvasionBlocked ? (
@@ -334,8 +376,8 @@ export default function AdversarialLab() {
                     {isEvasionBlocked
                       ? 'Adversarial perturbation fooled the unhardened baseline into predicting benign traffic, but the Hardened Retrained Model detected and blocked the attack.'
                       : baselineEvaded
-                      ? 'The perturbation successfully bypassed both models. Consider increasing training augmentation budget.'
-                      : 'The perturbation was insufficient to cross the decision boundary; both models successfully detected the intrusion.'}
+                        ? 'The perturbation successfully bypassed both models. Consider increasing training augmentation budget.'
+                        : 'The perturbation was insufficient to cross the decision boundary; both models successfully detected the intrusion.'}
                   </p>
                 </div>
               </div>
@@ -362,11 +404,10 @@ export default function AdversarialLab() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-400">Verdict Under Attack:</span>
                     <span
-                      className={`font-mono text-xs font-bold px-2.5 py-1 rounded-md border ${
-                        baselineEvaded
+                      className={`font-mono text-xs font-bold px-2.5 py-1 rounded-md border ${baselineEvaded
                           ? 'bg-rose-500/20 text-rose-400 border-rose-500/30 animate-pulse'
                           : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                      }`}
+                        }`}
                     >
                       {simResult?.baseline_under_attack.predicted.toUpperCase() ?? '—'}
                     </span>
@@ -389,13 +430,12 @@ export default function AdversarialLab() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-400">Assigned Triage Tier:</span>
                     <span
-                      className={`text-xs font-mono uppercase font-bold px-2 py-0.5 rounded ${
-                        simResult?.baseline_under_attack.tier === 'critical'
+                      className={`text-xs font-mono uppercase font-bold px-2 py-0.5 rounded ${simResult?.baseline_under_attack.tier === 'critical'
                           ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                           : simResult?.baseline_under_attack.tier === 'review'
-                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                          : 'bg-slate-700/50 text-slate-400 border border-white/10'
-                      }`}
+                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            : 'bg-slate-700/50 text-slate-400 border border-white/10'
+                        }`}
                     >
                       {simResult?.baseline_under_attack.tier ?? '—'}
                     </span>
@@ -435,11 +475,10 @@ export default function AdversarialLab() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-400">Verdict Under Attack:</span>
                     <span
-                      className={`font-mono text-xs font-bold px-2.5 py-1 rounded-md border ${
-                        hardenedEvaded
+                      className={`font-mono text-xs font-bold px-2.5 py-1 rounded-md border ${hardenedEvaded
                           ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
                           : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                      }`}
+                        }`}
                     >
                       {simResult?.hardened_under_attack.predicted.toUpperCase() ?? '—'}
                     </span>
@@ -462,13 +501,12 @@ export default function AdversarialLab() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-400">Assigned Triage Tier:</span>
                     <span
-                      className={`text-xs font-mono uppercase font-bold px-2 py-0.5 rounded ${
-                        simResult?.hardened_under_attack.tier === 'critical'
+                      className={`text-xs font-mono uppercase font-bold px-2 py-0.5 rounded ${simResult?.hardened_under_attack.tier === 'critical'
                           ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                           : simResult?.hardened_under_attack.tier === 'review'
-                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                          : 'bg-slate-700/50 text-slate-400 border border-white/10'
-                      }`}
+                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            : 'bg-slate-700/50 text-slate-400 border border-white/10'
+                        }`}
                     >
                       {simResult?.hardened_under_attack.tier ?? '—'}
                     </span>
@@ -527,8 +565,8 @@ export default function AdversarialLab() {
                             {d.feature.includes('rate')
                               ? 'Bounded in [0.0, 1.0]'
                               : d.feature.includes('count')
-                              ? 'Non-negative integer'
-                              : 'Continuous valid flow'}
+                                ? 'Non-negative integer'
+                                : 'Continuous valid flow'}
                           </td>
                         </tr>
                       ))}
@@ -619,9 +657,9 @@ export default function AdversarialLab() {
 
           <div className="grid md:grid-cols-3 gap-4 pt-4 border-t border-white/8 text-xs text-slate-400">
             <div className="space-y-1">
-              <span className="font-bold text-slate-300">1. Generative Evasion Resilience</span>
+              <span className="font-bold text-slate-300">1. Manifold Drift Resilience</span>
               <p className="text-[11px] leading-relaxed">
-                DEMGAN evasion attacks succeed against baseline trees by shifting statistical error rates toward normal distributions. Hardened retraining cuts classifier evasion in half.
+                DEMGAN surrogate attacks simulate generative evasion by shifting statistical feature distributions toward normal centroids along domain-constrained manifolds. Hardened retraining cuts classifier evasion by {metrics ? `${metrics.adversarial_summary.evasion_reduction_pct}%` : '28.8%'} (down from {metrics ? `${(metrics.adversarial_summary.baseline_evasion_rate * 100).toFixed(1)}%` : '15.1%'} to {metrics ? `${(metrics.adversarial_summary.hardened_evasion_rate * 100).toFixed(1)}%` : '10.7%'}).
               </p>
             </div>
             <div className="space-y-1">
@@ -633,7 +671,7 @@ export default function AdversarialLab() {
             <div className="space-y-1">
               <span className="font-bold text-slate-300">3. Zero False Alarm Penalty</span>
               <p className="text-[11px] leading-relaxed">
-                Benign test flows evaluated against the hardened detector show an identical false positive rate (8.07%), demonstrating that adversarial robustness did not compromise operational benign triage.
+                Benign test flows evaluated against the hardened detector show an identical false positive rate ({metrics ? `${(metrics.clean_metrics.hardened_fpr * 100).toFixed(2)}%` : '8.07%'} vs {metrics ? `${(metrics.clean_metrics.baseline_fpr * 100).toFixed(2)}%` : '8.07%'} baseline), incurring an exact 0.0% false alarm penalty (zero drift), demonstrating that adversarial robustness did not compromise operational benign triage.
               </p>
             </div>
           </div>

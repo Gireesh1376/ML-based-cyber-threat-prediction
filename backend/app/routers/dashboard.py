@@ -1,20 +1,38 @@
+import logging
+
 from fastapi import APIRouter, HTTPException, Query
 
+from app.db import check_es_connection, get_alerts as get_es_alerts, seed_demo_alerts_if_empty
 from app.ml.detector import DetectorNotReady, get_model, get_tier_cutoffs, load_demo_alerts, load_metrics
 from app.ml.priority import annotate_alert, tier_from_score
 
+logger = logging.getLogger("aegis.dashboard")
 router = APIRouter(tags=["dashboard"])
 
 
 @router.get("/dashboard/summary")
 def summary():
     metrics = load_metrics()
-    alerts = load_demo_alerts()
     if not metrics:
         return {
             "ready": False,
             "message": "Train the hybrid detector first.",
         }
+
+    db_connected = False
+    try:
+        alerts = get_es_alerts(limit=500)
+        if not alerts:
+            seed_demo_alerts_if_empty()
+            alerts = get_es_alerts(limit=500)
+        if alerts:
+            db_connected = True
+        else:
+            alerts = load_demo_alerts()
+    except Exception as exc:
+        logger.warning("Could not load alerts from Elasticsearch for dashboard summary: %s", exc)
+        alerts = load_demo_alerts()
+
     threats = [a for a in alerts if a.get("predicted") != "normal"]
     zero_days = [a for a in alerts if a.get("is_zero_day")]
     by_pred = {}
@@ -36,8 +54,22 @@ def summary():
         if tier is None:
             tier = tier_from_score(annotate_alert(a, metrics.get("reconstruction_threshold", 1.0), cutoffs)["priority"], cutoffs)
         by_tier[tier] = by_tier.get(tier, 0) + 1
+
+    try:
+        from app.ml.adversarial import load_adversarial_metrics
+        adv_m = load_adversarial_metrics()
+        adv_summary = adv_m.get("adversarial_summary")
+        clean_metrics = adv_m.get("clean_metrics")
+    except Exception:
+        adv_summary = None
+        clean_metrics = None
+
     return {
         "ready": True,
+        "database": {
+            "type": "elasticsearch",
+            "connected": db_connected,
+        },
         "problem": metrics.get("problem"),
         "architecture": metrics.get("architecture"),
         "dataset": metrics.get("dataset"),
@@ -109,6 +141,10 @@ def summary():
         "detection_comparison": metrics.get("detection_comparison"),
         "zero_day": zd,
         "reconstruction_threshold": metrics.get("reconstruction_threshold"),
+        "adversarial": {
+            "summary": adv_summary,
+            "clean_metrics": clean_metrics,
+        },
     }
 
 
@@ -126,32 +162,41 @@ def alerts(
     sort: str = Query(default="priority", description="priority | id"),
     limit: int = Query(default=0, ge=0, le=500),
 ):
-    items = load_demo_alerts()
     cutoffs = get_tier_cutoffs()
     threshold = load_metrics().get("reconstruction_threshold", 1.0)
-    # Saved alerts may predate the asset-criticality update; re-annotate any
-    # alert that is missing priority OR components OR asset fields so the UI
-    # always shows a complete, consistent explainability payload.
-    def _needs_annotation(a: dict) -> bool:
-        return (
-            a.get("priority") is None
-            or a.get("tier") is None
-            or a.get("priority_components") is None
-            or a.get("asset_criticality") is None
-            or a.get("tier_reason") is None
-        )
+    source = "elasticsearch"
 
-    items = [annotate_alert(a, threshold, cutoffs) if _needs_annotation(a) else a for a in items]
-    if tier:
-        wanted = {t.strip() for t in tier.split(",")}
-        items = [a for a in items if a.get("tier") in wanted]
-    if sort == "id":
-        items.sort(key=lambda a: a["id"])
-    else:
-        items.sort(key=lambda a: a.get("priority", 0.0), reverse=True)
-    if limit:
-        items = items[:limit]
-    return {"items": items, "count": len(items), "tier_cutoffs": cutoffs}
+    try:
+        items = get_es_alerts(tier=tier, sort=sort, limit=limit)
+        if not items and not tier:
+            seed_demo_alerts_if_empty()
+            items = get_es_alerts(tier=tier, sort=sort, limit=limit)
+    except Exception as exc:
+        logger.warning("Elasticsearch alert fetch failed, falling back to local demo_alerts: %s", exc)
+        source = "local_fallback"
+        items = load_demo_alerts()
+
+        def _needs_annotation(a: dict) -> bool:
+            return (
+                a.get("priority") is None
+                or a.get("tier") is None
+                or a.get("priority_components") is None
+                or a.get("asset_criticality") is None
+                or a.get("tier_reason") is None
+            )
+
+        items = [annotate_alert(a, threshold, cutoffs) if _needs_annotation(a) else a for a in items]
+        if tier:
+            wanted = {t.strip() for t in tier.split(",")}
+            items = [a for a in items if a.get("tier") in wanted]
+        if sort == "id":
+            items.sort(key=lambda a: a["id"])
+        else:
+            items.sort(key=lambda a: a.get("priority", 0.0), reverse=True)
+        if limit:
+            items = items[:limit]
+
+    return {"items": items, "count": len(items), "tier_cutoffs": cutoffs, "source": source}
 
 
 @router.get("/model/status")
@@ -161,3 +206,9 @@ def status():
         return {"ready": True}
     except DetectorNotReady as exc:
         return {"ready": False, "detail": str(exc)}
+
+
+@router.get("/db/status")
+def db_status():
+    """Returns real-time connectivity status and metadata for the Elasticsearch database."""
+    return check_es_connection()
