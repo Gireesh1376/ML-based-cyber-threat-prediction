@@ -549,3 +549,101 @@ def test_complete_deployed_detector_evaluation():
         assert row["adaptive_hardened_hybrid_evasion"] <= row["adaptive_hardened_classifier_evasion"] + 1e-4, (
             f"Anomaly gate violation in hardened adaptive for {row['method']} eps={row['epsilon']}"
         )
+
+
+def test_api_evidence_endpoint_schema_and_integrity():
+    """Verify GET /api/adversarial/evidence returns valid summary metrics, disclaimers, and quadrant breakdowns."""
+    resp = client.get("/api/adversarial/evidence?method=fgsm&epsilon=0.20")
+    assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+    data = resp.json()
+
+    assert data["method"] == "fgsm"
+    assert data["epsilon"] == 0.20
+    assert "summary" in data
+    assert "quadrant_cases" in data
+
+    summary = data["summary"]
+    assert summary["total_samples"] == 1500
+    assert summary["baseline_evaded_count"] > 0
+    assert summary["hardened_evaded_count"] > 0
+    assert summary["percentage_point_difference"] > 0
+    assert summary["relative_reduction_pct"] > 0
+    assert "demgan_limitation_notice" in summary
+    assert "surrogate" in summary["demgan_limitation_notice"].lower()
+    assert "benchmark_simulation_notice" in summary
+
+    # Verify 4 quadrants exist
+    counts = summary["quadrant_counts"]
+    assert "hardened_caught_baseline_evaded" in counts
+    assert "both_caught" in counts
+    assert "both_failed" in counts
+    assert "baseline_caught_hardened_evaded" in counts
+
+    # Verified empirical assertions
+    assert counts["hardened_caught_baseline_evaded"] > 0
+    assert counts["both_caught"] > 0
+    assert counts["both_failed"] > 0
+    assert counts["baseline_caught_hardened_evaded"] == 0
+    assert "investigation_notes" in summary
+
+
+def test_api_evidence_sample_cases_predictions():
+    """Verify that sample cases in each quadrant genuinely match their stated behavior."""
+    resp = client.get("/api/adversarial/evidence?method=fgsm&epsilon=0.20")
+    assert resp.status_code == 200
+    data = resp.json()
+    quad_cases = data["quadrant_cases"]
+
+    # 1. Hardened caught, baseline evaded
+    hc_cases = quad_cases["hardened_caught_baseline_evaded"]
+    assert len(hc_cases) > 0
+    for case in hc_cases:
+        assert case["baseline"]["evaded"] is True
+        assert case["baseline"]["predicted"] == "normal"
+        assert case["hardened"]["evaded"] is False
+        assert case["hardened"]["predicted"] != "normal"
+        assert case["ground_truth_label"] != "normal"
+        assert case["ground_truth_family"] in ["dos", "r2l", "probe", "u2r"]
+        assert case["constraints_valid"] is True
+        assert len(case["feature_deltas"]) > 0
+
+    # 2. Both caught
+    bc_cases = quad_cases["both_caught"]
+    assert len(bc_cases) > 0
+    for case in bc_cases:
+        assert case["baseline"]["evaded"] is False
+        assert case["hardened"]["evaded"] is False
+        assert case["baseline"]["predicted"] != "normal"
+        assert case["hardened"]["predicted"] != "normal"
+
+    # 3. Both failed
+    bf_cases = quad_cases["both_failed"]
+    assert len(bf_cases) > 0
+    for case in bf_cases:
+        assert case["baseline"]["evaded"] is True
+        assert case["hardened"]["evaded"] is True
+        assert case["baseline"]["predicted"] == "normal"
+        assert case["hardened"]["predicted"] == "normal"
+
+
+def test_simulate_with_sample_id():
+    """Verify POST /api/adversarial/simulate accepts sample_id and preserves ground truth."""
+    resp_ev = client.get("/api/adversarial/evidence?method=fgsm&epsilon=0.20")
+    assert resp_ev.status_code == 200
+    sample_case = resp_ev.json()["quadrant_cases"]["hardened_caught_baseline_evaded"][0]
+    sample_id = sample_case["case_id"]
+
+    resp = client.post("/api/adversarial/simulate", json={
+        "sample_id": sample_id,
+        "method": "fgsm",
+        "epsilon": 0.20,
+    })
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["sample_id"] == sample_id
+    assert data["ground_truth_label"] == sample_case["ground_truth_label"]
+    assert data["ground_truth_family"] == sample_case["ground_truth_family"]
+    assert data["baseline_under_attack"]["predicted"] == "normal"
+    assert data["hardened_under_attack"]["predicted"] != "normal"
+    assert data["analysis"]["evasion_blocked"] is True
+

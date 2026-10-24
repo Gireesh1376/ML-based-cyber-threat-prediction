@@ -215,6 +215,7 @@ export type FeatureDelta = {
   original: number | string
   perturbed: number | string
   delta: number | string
+  invariant?: string
 }
 
 export type FlowPrediction = {
@@ -231,6 +232,10 @@ export type FlowPrediction = {
 export type AdversarialSimulateResult = {
   method: string
   epsilon: number
+  adaptive?: boolean
+  sample_id?: string
+  ground_truth_label?: string
+  ground_truth_family?: string
   deltas_count: number
   feature_deltas: FeatureDelta[]
   perturbed_flow: Record<string, string | number>
@@ -243,6 +248,56 @@ export type AdversarialSimulateResult = {
     evasion_blocked: boolean
     status: string
   }
+}
+
+export type QuadrantType =
+  | 'hardened_caught_baseline_evaded'
+  | 'both_caught'
+  | 'both_failed'
+  | 'baseline_caught_hardened_evaded'
+
+export type AdversarialEvidenceCase = {
+  case_id: string
+  sample_index: number
+  quadrant: QuadrantType
+  ground_truth_label: string
+  ground_truth_family: string
+  method: string
+  epsilon: number
+  service: string
+  protocol: string
+  original_flow: Record<string, string | number>
+  perturbed_flow: Record<string, string | number>
+  deltas_count: number
+  feature_deltas: FeatureDelta[]
+  constraints_valid: boolean
+  baseline: FlowPrediction & { evaded: boolean }
+  hardened: FlowPrediction & { evaded: boolean }
+  status: string
+  notes: string
+}
+
+export type AdversarialEvidenceSummary = {
+  total_samples: number
+  baseline_evaded_count: number
+  baseline_evasion_rate_pct: number
+  hardened_evaded_count: number
+  hardened_evasion_rate_pct: number
+  percentage_point_difference: number
+  relative_reduction_pct: number
+  quadrant_counts: Record<QuadrantType, number>
+  quadrant_percentages: Record<QuadrantType, number>
+  quadrant_descriptions: Record<QuadrantType, string>
+  investigation_notes: string
+  demgan_limitation_notice: string
+  benchmark_simulation_notice: string
+}
+
+export type AdversarialEvidenceResponse = {
+  method: string
+  epsilon: number
+  summary: AdversarialEvidenceSummary
+  quadrant_cases: Record<QuadrantType, AdversarialEvidenceCase[]>
 }
 
 export type AdversarialSweepItem = {
@@ -302,6 +357,16 @@ export async function getAdversarialMetrics(): Promise<AdversarialMetrics> {
   return res.json()
 }
 
+export async function getAdversarialEvidence(
+  method = 'fgsm',
+  epsilon = 0.20,
+): Promise<AdversarialEvidenceResponse> {
+  const qs = new URLSearchParams({ method, epsilon: String(epsilon) })
+  const res = await fetch(`${API}/api/adversarial/evidence?${qs}`)
+  if (!res.ok) throw new Error('Failed to load adversarial evidence')
+  return res.json()
+}
+
 export async function getAdversarialPresets(): Promise<AdversarialPresetsResponse> {
   const res = await fetch(`${API}/api/adversarial/presets`)
   if (!res.ok) throw new Error('Failed to load adversarial presets')
@@ -310,6 +375,7 @@ export async function getAdversarialPresets(): Promise<AdversarialPresetsRespons
 
 export async function simulateAdversarial(payload: {
   preset?: string
+  sample_id?: string
   flow?: Record<string, string | number>
   method?: string
   epsilon?: number
@@ -326,6 +392,7 @@ export async function simulateAdversarial(payload: {
   }
   return res.json()
 }
+
 
 export type DbStatus = {
   connected: boolean
