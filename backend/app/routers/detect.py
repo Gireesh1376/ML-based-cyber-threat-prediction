@@ -14,6 +14,11 @@ from app.db import (
     validate_batch_storage_response,
 )
 from app.ml.detector import DetectorNotReady, load_demo_alerts, predict_payload
+from app.ml.encrypted_detector import (
+    EncryptedDetectorNotReady,
+    ENCRYPTED_PRESETS,
+    predict_encrypted_flow,
+)
 
 logger = logging.getLogger("aegis.detect")
 router = APIRouter(tags=["detect"])
@@ -385,6 +390,57 @@ def detect_batch(payload: BatchPayload):
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
+def classify_replay_target(alert: dict[str, Any]) -> str:
+    """
+    Determines whether a stored alert should be replayed via:
+    - 'tls' (Problem 2: Encrypted Traffic Analysis)
+    - 'nsl_kdd' (Problem 1: Tabular Network Anomaly + XGBoost)
+    - 'unsupported' (unknown or malformed schema)
+    """
+    protocol = str(alert.get("protocol") or "").strip().lower()
+    flow = alert.get("flow")
+
+    tls_keys = {
+        "tls.ja4", "tls_ja4", "ja4",
+        "tls.cver", "tls_cver", "cver",
+        "tls.scs", "tls_scs", "scs",
+        "tls.sni", "tls_sni", "sni",
+        "tls.ccs", "tls_ccs", "ccs",
+        "tls.cext", "tls_cext", "cext",
+        "tls.csg", "tls_csg", "csg",
+        "tls.sext", "tls_sext", "sext",
+        "tls.alpn", "tls_alpn", "alpn",
+        "tls.rec", "tls_rec", "rec",
+    }
+
+    # 1. Explicit TLS protocol
+    if protocol == "tls":
+        return "tls"
+
+    # 2. Flow-level inspection when flow is present
+    if isinstance(flow, dict) and flow:
+        has_tls_marker = any(k in flow for k in tls_keys)
+        has_encrypted_transport = all(k in flow for k in ("bs", "br", "ps", "pr"))
+
+        if has_tls_marker or (has_encrypted_transport and (protocol == "tls" or flow.get("dp") in (443, 8443))):
+            return "tls"
+
+        nsl_kdd_features = set(FEATURE_COLUMNS)
+        matching_nsl_keys = set(flow.keys()).intersection(nsl_kdd_features)
+
+        # An NSL-KDD flow must contain authentic tabular network features and no TLS indicators
+        if matching_nsl_keys and not has_tls_marker:
+            return "nsl_kdd"
+
+        return "unsupported"
+
+    # 3. Fallback for legacy seeded alerts without flow dictionary
+    if protocol in ("tcp", "udp", "icmp"):
+        return "nsl_kdd"
+
+    return "unsupported"
+
+
 @router.post("/detect/replay/{alert_id}")
 def replay(alert_id: str):
     # Check Elasticsearch first
@@ -401,15 +457,71 @@ def replay(alert_id: str):
     if not match:
         raise HTTPException(status_code=404, detail="Alert not found")
 
-    flow = match.get("flow")
-    if flow:
-        # Exact replay: the alert carries its full feature payload.
-        result = predict_payload(dict(flow))
+    target = classify_replay_target(match)
+
+    if target == "tls":
+        flow = match.get("flow")
+        if not flow or not isinstance(flow, dict):
+            preset_key = "cobalt_strike_beacon" if match.get("predicted") in ("malicious", "attack") else "benign_https_web"
+            flow_payload = dict(ENCRYPTED_PRESETS[preset_key]["flow"])
+        else:
+            flow_payload = dict(flow)
+
+        try:
+            result = predict_encrypted_flow(flow_payload)
+        except EncryptedDetectorNotReady as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=f"Malformed TLS flow payload in alert: {exc}") from exc
+        except Exception as exc:
+            logger.exception("Error replaying TLS alert '%s': %s", alert_id, exc)
+            raise HTTPException(status_code=500, detail=f"Replay failed: {exc}") from exc
+
+        result["replayed_from"] = alert_id
+        result["protocol"] = "tls"
+        result["engine"] = "encrypted_traffic_detector"
+        result["is_zero_day"] = False
+        result["reconstruction_error"] = 0.0
+        result["threshold"] = result.get("decision_threshold", 0.5)
+        result["known_class"] = "malicious_tls" if result.get("is_malicious") else "benign_tls"
+        result["severity"] = (
+            "high"
+            if result.get("is_malicious") and result.get("confidence", 0) >= 0.85
+            else ("medium" if result.get("is_malicious") else "low")
+        )
+        result["rationale"] = "Observable TLS handshake & SPLT metadata inference without payload decryption."
+        result["anomaly_features"] = []
+        return result
+
+    elif target == "nsl_kdd":
+        flow = match.get("flow")
+        if flow and isinstance(flow, dict):
+            # Exact replay: the alert carries its full feature payload
+            flow_payload = dict(flow)
+        else:
+            # Legacy alerts without a stored payload: fall back to the closest preset
+            preset_key = "benign_web" if match.get("predicted") == "normal" else "known_dos"
+            if match.get("is_zero_day"):
+                preset_key = "zero_day_like"
+            flow_payload = dict(PRESETS[preset_key])
+
+        try:
+            result = predict_payload(flow_payload)
+        except DetectorNotReady as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=f"Malformed network flow payload in alert: {exc}") from exc
+        except Exception as exc:
+            logger.exception("Error replaying NSL-KDD alert '%s': %s", alert_id, exc)
+            raise HTTPException(status_code=500, detail=f"Replay failed: {exc}") from exc
+
+        result["replayed_from"] = alert_id
+        result["protocol"] = match.get("protocol", "tcp")
+        result["engine"] = "zero_day_detector"
+        return result
+
     else:
-        # Legacy alerts without a stored payload: fall back to the closest preset.
-        preset_key = "benign_web" if match["predicted"] == "normal" else "known_dos"
-        if match.get("is_zero_day"):
-            preset_key = "zero_day_like"
-        result = predict_payload(dict(PRESETS[preset_key]))
-    result["replayed_from"] = alert_id
-    return result
+        raise HTTPException(
+            status_code=422,
+            detail=f"Alert '{alert_id}' contains an unsupported, ambiguous, or malformed flow schema that cannot be replayed.",
+        )

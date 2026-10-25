@@ -100,7 +100,7 @@ export default function ZeroDayLab() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/8 pb-6">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400">Problem 1 · Live Detection Studio</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400">Problem 1 · Zero-Day Simulation Studio</span>
             <span className="text-slate-600">·</span>
             <span className="text-xs font-mono text-slate-400">Autoencoder + XGBoost Cockpit</span>
           </div>

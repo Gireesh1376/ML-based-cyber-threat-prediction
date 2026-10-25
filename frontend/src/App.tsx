@@ -14,7 +14,8 @@ import {
   Lightbulb,
   Moon,
   ShieldAlert,
-  Database
+  Database,
+  Lock
 } from 'lucide-react'
 import { useTheme } from './context/ThemeContext'
 import { DatabaseModal } from './components/DatabaseModal'
@@ -22,9 +23,10 @@ import { getDbStatus, getHealth, type DbStatus } from './api'
 
 const navigationItems = [
   { to: '/', label: 'Executive Hub', icon: Home, end: true, badge: null },
-  { to: '/overview', label: 'Threat Operations', icon: LayoutDashboard, end: false, badge: 'Live' },
+  { to: '/overview', label: 'Threat Operations', icon: LayoutDashboard, end: false, badge: 'SOC' },
   { to: '/alerts', label: 'Incident Triage', icon: BellRing, end: false, badge: 'Queue' },
   { to: '/zero-day', label: 'Zero-Day Studio', icon: Radar, end: false, badge: 'Lab' },
+  { to: '/encrypted', label: 'Encrypted Traffic', icon: Lock, end: false, badge: 'TLS' },
   { to: '/adversarial', label: 'Adversarial Defense', icon: ShieldAlert, end: false, badge: 'Hardened' },
   { to: '/model', label: 'Model Intelligence', icon: Cpu, end: false, badge: '87.5%' },
   { to: '/roadmap', label: 'Program Roadmap', icon: ShieldCheck, end: false, badge: '4-Tier' },

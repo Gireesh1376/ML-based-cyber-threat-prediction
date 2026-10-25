@@ -426,3 +426,165 @@ export async function getHealth(): Promise<HealthStatus> {
   return res.json()
 }
 
+// ---------------------------------------------------------------------------
+// Problem 2: Encrypted Traffic Analysis API
+// ---------------------------------------------------------------------------
+
+export type EncryptedPreset = {
+  title: string
+  category: string
+  description: string
+  flow: Record<string, any>
+}
+
+export type EncryptedSchemaResponse = {
+  status: string
+  model_architecture: string
+  feature_count: number
+  feature_names: string[]
+  raw_inputs: {
+    flow_transport: string[]
+    splt_sequence: string[]
+    protocol_fingerprints: string[]
+  }
+  presets: Record<string, EncryptedPreset>
+  disclaimer: string
+}
+
+export type EncryptedMetricsResponse = {
+  status?: string
+  problem?: string
+  dataset?: string
+  model_architecture?: string
+  split_summary?: {
+    train_samples?: number
+    test_samples?: number
+    cutoff_date?: number
+    train_unique_sample_ids?: number
+    test_unique_sample_ids?: number
+    sample_id_overlap?: number
+    train_positive_ratio?: number
+    test_positive_ratio?: number
+  }
+  ablation_comparison?: Record<string, {
+    description?: string
+    features?: number
+    accuracy?: number
+    recall?: number
+    precision?: number
+    fpr?: number
+    roc_auc?: number
+    f1?: number
+  }>
+  primary_evaluation?: {
+    accuracy: number
+    precision: number
+    recall: number
+    f1: number
+    benign_fpr: number
+    roc_auc: number
+    pr_auc: number
+    confusion_matrix: number[][]
+  }
+  slice_evaluation?: {
+    seen_attack_families?: {
+      sample_count?: number
+      recall?: number
+      detected_count?: number
+    }
+    zero_day_holdout_families?: {
+      sample_count?: number
+      family_count?: number
+      recall?: number
+      detected_count?: number
+      families?: string[]
+    }
+    clean_runs_baseline?: {
+      sample_count?: number
+      fpr?: number
+      false_positives?: number
+    }
+    family_breakdown?: Record<string, {
+      total?: number
+      detected?: number
+      recall?: number
+    }>
+  }
+  threshold_sweep?: Array<{
+    threshold: number
+    precision: number
+    recall: number
+    fpr: number
+    f1: number
+  }>
+}
+
+export type EncryptedDetectionResult = {
+  id?: string
+  predicted: string
+  is_malicious: boolean
+  confidence: number
+  malicious_probability: number
+  benign_probability: number
+  decision_threshold: number
+  priority: number
+  tier: Tier
+  tier_reason: string
+  tier_floor_applied: boolean
+  blocking_recommended: boolean
+  mitigation_action: string
+  priority_components: Record<string, number>
+  asset_criticality: number
+  top_features: Array<{
+    feature: string
+    importance: number
+    direction: string
+  }>
+  dq_flags: string[]
+  metadata_inspected: Record<string, any>
+  payload_decrypted: boolean
+  saved_to_db?: boolean
+  db_status?: string
+}
+
+export type EncryptedLiveStatusResponse = {
+  connected: boolean
+  status: string
+  mode: string
+  live_pcap_supported: boolean
+  active_interface?: string | null
+  message: string
+}
+
+export async function getEncryptedSchema(): Promise<EncryptedSchemaResponse> {
+  const res = await fetch(`${API}/api/encrypted/schema`)
+  if (!res.ok) throw new Error('Failed to load encrypted traffic schema')
+  return res.json()
+}
+
+export async function getEncryptedMetrics(): Promise<EncryptedMetricsResponse> {
+  const res = await fetch(`${API}/api/encrypted/metrics`)
+  if (!res.ok) throw new Error('Failed to load encrypted traffic benchmark metrics')
+  return res.json()
+}
+
+export async function getEncryptedLiveStatus(): Promise<EncryptedLiveStatusResponse> {
+  const res = await fetch(`${API}/api/encrypted/live-status`)
+  if (!res.ok) throw new Error('Failed to load live status')
+  return res.json()
+}
+
+export async function detectEncryptedFlow(flow: Record<string, any>): Promise<EncryptedDetectionResult> {
+  const res = await fetch(`${API}/api/encrypted/detect`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(flow),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || 'Encrypted flow analysis failed')
+  }
+  return res.json()
+}
+
+

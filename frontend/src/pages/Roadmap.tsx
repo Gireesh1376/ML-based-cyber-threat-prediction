@@ -51,19 +51,19 @@ export default function Roadmap() {
     },
     {
       id: 'P2',
-      title: 'Encrypted TLS / QUIC Traffic Blind Spot',
-      subtitle: 'Metadata-Driven CNN-BiLSTM (No-Decryption)',
-      status: 'Phase 2 (Planned)',
-      badgeClass: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+      title: 'Encrypted TLS / QUIC Traffic Threat Detection',
+      subtitle: 'Metadata-Driven Gradient-Boosted Trees (SPLT + JA4 + Flow)',
+      status: 'Implemented',
+      badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
       icon: Lock,
       metrics: [
-        { label: 'Target Protocol', val: 'TLS 1.3 / ECH' },
-        { label: 'Architecture', val: 'CNN-BiLSTM' },
-        { label: 'Features', val: 'SPLT + JA4' },
+        { label: 'Holdout Accuracy', val: '97.99%' },
+        { label: 'Attack Recall', val: '98.23%' },
+        { label: 'Benign FPR', val: '2.15%' },
       ],
-      body: 'Privacy-preserving encrypted traffic analysis using packet length sequences, burst timing (SPLT), and TLS handshake attributes without intercepting or decrypting payload contents, conforming to NIST SP 1800-37 guidelines.',
-      link: null,
-      linkLabel: null,
+      body: 'Privacy-preserving encrypted traffic analysis using packet length sequences (SPLT), connection transport dynamics, and TLS handshake attributes (JA4, cipher suites) without intercepting or decrypting payload contents, conforming to NIST SP 1800-37 guidelines.',
+      link: '/encrypted',
+      linkLabel: 'Open Encrypted Lab',
     },
     {
       id: 'P3',
@@ -142,7 +142,7 @@ export default function Roadmap() {
         </div>
 
         <div className="glass-pill px-3 py-1.5 rounded-xl text-xs font-mono text-slate-300">
-          Current Release: <span className="text-emerald-400 font-bold">Problems 1, 3 & 4 Built</span>
+          Current Release: <span className="text-emerald-400 font-bold">Problems 1, 2, 3 & 4 Implemented</span>
         </div>
       </div>
 
@@ -152,8 +152,8 @@ export default function Roadmap() {
           <h2 className="text-sm font-bold text-white uppercase tracking-wider">Unified Threat Architecture</h2>
           <p className="text-xs text-slate-400 leading-relaxed max-w-4xl">
             Rather than deploying disconnected tools, the research design integrates the challenges into a single 
-            cyber defense workflow. In this release, <strong>Problem 1 (Zero-Day Detection)</strong>, <strong>Problem 3 (Alert Prioritisation)</strong>, and <strong>Problem 4 (Adversarial Robustness)</strong> are 
-            fully implemented and empirically validated on the NSL-KDD benchmark. Problem 2 represents the next planned phase in the architecture roadmap.
+            cyber defense workflow. In this release, <strong>Problem 1 (Zero-Day Detection)</strong>, <strong>Problem 2 (Encrypted Traffic Analysis)</strong>, <strong>Problem 3 (Alert Prioritisation)</strong>, and <strong>Problem 4 (Adversarial Robustness)</strong> are 
+            fully implemented and empirically validated on their respective benchmarks.
           </p>
         </div>
       </ScrollSection>

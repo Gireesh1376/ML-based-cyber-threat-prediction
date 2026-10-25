@@ -1,15 +1,23 @@
 # Aegis — ML-Based Cyber Threat Prediction
 
-Full-stack SOC dashboard for the academic project **ML-Based Cyber Threat Prediction**. This release implements **Problem 1: zero-day / unknown attack detection**, **Problem 3: alert prioritisation**, and **Problem 4: adversarial evasion robustness** with a hybrid Autoencoder + XGBoost pipeline in the style of Dai et al. (2024, PLOS ONE) and Xu et al. (2025, CMC).
+Full-stack SOC dashboard for the academic project **ML-Based Cyber Threat Prediction**. This release implements **Problem 1: zero-day / unknown attack detection**, **Problem 2: encrypted TLS traffic threat detection**, **Problem 3: alert prioritisation**, and **Problem 4: adversarial evasion robustness** with a hybrid Autoencoder + XGBoost pipeline in the style of Dai et al. (2024, PLOS ONE) and Xu et al. (2025, CMC).
 
 ## Architecture
 
-- **Frontend:** React + Vite + TypeScript, operations dashboard with Zero-Day Studio and Adversarial Defense Cockpit
-- **Backend:** FastAPI
-- **Detector:** StandardScaler + One-Hot features → XGBoost feature selection → MLP autoencoder on benign traffic → XGBoost known-family classifier → novel-threat gate from reconstruction error → adversarially hardened model artifact
-- **Dataset:** NSL-KDD (auto-downloaded on first training run). Attack types absent from the official train split (and a configured hold-out set) are treated as zero-days
+- **Frontend:** React + Vite + TypeScript, SOC operations dashboard with Zero-Day Studio, Encrypted Traffic Lab, Adversarial Defense Cockpit, and Incident Triage queue.
+- **Backend:** FastAPI with modular routers for `/api/detect`, `/api/encrypted`, `/api/priority`, and `/api/adversarial`.
+- **Detectors:**
+  - *Problem 1 (Zero-Day):* StandardScaler + One-Hot features → XGBoost feature selection → PyTorch MLP autoencoder on benign traffic → XGBoost known-family classifier → novel-threat gate from reconstruction error.
+  - *Problem 2 (Encrypted TLS):* Leakage-resistant feature transformer (71 observable features: JA4 fingerprint prefix, cipher suites, SNI entropy, and SPLT packet size/direction sequences) → XGBoost classifier (300 estimators) without decrypting payloads. Evaluated on 18,874 holdout TLS connections (ROC-AUC 0.9996, PR-AUC 0.9996, F1 0.9938).
+  - *Problem 3 (Prioritisation):* Class-aware composite score ($w_a \cdot S_a + w_c \cdot C_{asset} + w_u \cdot U + w_v \cdot V - w_h \cdot H$) sorting alerts into Critical, Review, and Auto-logged tiers.
+  - *Problem 4 (Adversarial Robustness):* Adversarially hardened model artifact trained against gradient-based (FGSM, PGD) and distribution (UAP, DEMGAN) perturbations under physical flow constraints.
+- **Datasets:** NSL-KDD benchmark for Problem 1, 3, and 4; Stratosphere/Malware TLS Parquet benchmark for Problem 2.
+- **Database:** Elasticsearch (`aegis-alerts` index) with automatic graceful fallback to `demo_alerts.json` when disconnected.
 
-Problem 2 (encrypted traffic) is mapped in the product roadmap as the next planned phase. Problems 1 (zero-day detection), 3 (alert prioritisation), and 4 (adversarial evasion robustness) are fully implemented, empirically evaluated, and verified with automated test suites below.
+### Operational Scope and Limitations
+
+- **Live Network Capture:** Live packet capture from network interfaces is **disconnected**. The system operates in offline demonstration, synthetic preset simulation, and API batch ingestion mode.
+- **Arbitrary PCAP Dissection:** The `/api/encrypted/analyze-pcap` endpoint intentionally returns **HTTP 501 Not Implemented**. In accordance with privacy and security principles, payloads are never decrypted, and connection metadata must be supplied as flow records.
 
 ## Problem 3 — alert prioritisation
 

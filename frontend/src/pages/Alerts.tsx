@@ -52,7 +52,7 @@ export default function Alerts() {
       .catch((e) => setError(e.message))
   }, [])
 
-  const items = data?.items ?? []
+  const items = useMemo(() => data?.items ?? [], [data?.items])
 
   const tierCounts = useMemo(() => {
     const counts: Record<string, number> = { critical: 0, review: 0, auto_log: 0 }
@@ -119,7 +119,7 @@ export default function Alerts() {
             <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">Problem 3 · Triage Engine</span>
             <span className="text-slate-600">·</span>
             <span className="text-xs font-mono text-slate-400">
-              {data.source === 'elasticsearch' ? `${items.length} Live Indexed Incidents` : `${items.length} Local Seed Flows`}
+              {data.source === 'elasticsearch' ? `${items.length} Indexed Incidents (Elasticsearch)` : `${items.length} Local Seed Flows`}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Incident Prioritisation Queue</h1>

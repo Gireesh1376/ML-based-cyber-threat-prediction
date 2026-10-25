@@ -132,7 +132,7 @@ export default function AdversarialLab() {
     return () => {
       isMounted = false
     }
-  }, [selectedMethod, epsilon])
+  }, [selectedMethod, epsilon, selectedQuadrant])
 
   // When user switches quadrant, pick the first case in that quadrant
   function handleQuadrantChange(q: QuadrantType) {

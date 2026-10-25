@@ -12,7 +12,7 @@ from app.ml.detector import _anomaly_contributors
 def _fake_artifacts(n_features: int = 12):
     rng = np.random.default_rng(0)
     X = rng.normal(size=(400, n_features))
-    ae = MLPRegressor(hidden_layer_sizes=(6,), max_iter=200, random_state=0).fit(X, X)
+    ae = MLPRegressor(hidden_layer_sizes=(6,), max_iter=400, tol=1e-3, random_state=0).fit(X, X)
     return SimpleNamespace(
         autoencoder=ae,
         selected_features=list(range(n_features)),

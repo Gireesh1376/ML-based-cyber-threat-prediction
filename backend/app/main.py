@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.db import check_es_connection, init_alerts_index
-from app.routers import adversarial, dashboard, detect
+from app.routers import adversarial, dashboard, detect, encrypted
 
 logger = logging.getLogger("aegis")
 
@@ -37,6 +37,7 @@ app.add_middleware(
 
 app.include_router(dashboard.router, prefix="/api")
 app.include_router(detect.router, prefix="/api")
+app.include_router(encrypted.router, prefix="/api")
 app.include_router(adversarial.router)
 
 
