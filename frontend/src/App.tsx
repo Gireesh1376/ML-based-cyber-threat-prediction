@@ -19,7 +19,7 @@ import {
 } from 'lucide-react'
 import { useTheme } from './context/ThemeContext'
 import { DatabaseModal } from './components/DatabaseModal'
-import { getDbStatus, getHealth, type DbStatus } from './api'
+import { getDbStatus, getHealth, getMetrics, type DbStatus } from './api'
 
 const navigationItems = [
   { to: '/', label: 'Executive Hub', icon: Home, end: true, badge: null },
@@ -38,9 +38,13 @@ export default function App() {
   const [isDbModalOpen, setIsDbModalOpen] = useState(false)
   const [dbStatus, setDbStatus] = useState<DbStatus | null>(null)
   const [apiHealth, setApiHealth] = useState<'checking' | 'connected' | 'offline'>('checking')
+  const [testAccuracy, setTestAccuracy] = useState<number | null>(null)
+  const [accuracyLoading, setAccuracyLoading] = useState(true)
   const location = useLocation()
 
   useEffect(() => {
+    let isMounted = true
+
     function checkServices() {
       getHealth()
         .then(() => setApiHealth('connected'))
@@ -52,7 +56,29 @@ export default function App() {
 
     checkServices()
     const interval = setInterval(checkServices, 15000)
-    return () => clearInterval(interval)
+
+    getMetrics()
+      .then((data: any) => {
+        if (!isMounted) return
+        const acc = data?.official_test_binary?.accuracy
+        if (typeof acc === 'number' && !isNaN(acc)) {
+          setTestAccuracy(acc)
+        } else {
+          setTestAccuracy(null)
+        }
+      })
+      .catch(() => {
+        if (!isMounted) return
+        setTestAccuracy(null)
+      })
+      .finally(() => {
+        if (isMounted) setAccuracyLoading(false)
+      })
+
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+    }
   }, [])
 
   // Keyboard shortcut: Press `[` or `\` to toggle sidebar
@@ -296,11 +322,24 @@ export default function App() {
               )}
             </button>
 
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full glass-pill text-xs text-slate-300 hover:border-white/20 transition-colors">
+            <div
+              className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full glass-pill text-xs text-slate-300 hover:border-white/20 transition-colors cursor-default"
+              title={
+                testAccuracy !== null
+                  ? `Official NSL-KDD binary test accuracy: ${(testAccuracy * 100).toFixed(2)}%`
+                  : 'Official NSL-KDD binary test accuracy'
+              }
+            >
               <Zap size={14} className="text-amber-400" />
               <span>NSL-KDD Benchmark</span>
               <span className="text-slate-600">·</span>
-              <span className="font-mono text-emerald-400 font-semibold">87.5% Acc</span>
+              <span className="font-mono text-emerald-400 font-semibold">
+                {accuracyLoading
+                  ? 'Loading...'
+                  : testAccuracy !== null
+                    ? `${(testAccuracy * 100).toFixed(1)}% Acc`
+                    : 'Unavailable'}
+              </span>
             </div>
 
             {/* Database Hub Indicator / Launcher Button */}
