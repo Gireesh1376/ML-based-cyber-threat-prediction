@@ -92,8 +92,13 @@ export default function EncryptedLab() {
   const pe = metricsData?.primary_evaluation
   const slice = metricsData?.slice_evaluation
 
-  // First 20 record lengths for SPLT visualization
-  const spltRecords: number[] = Array.isArray(currentFlow['tls.rec']) ? currentFlow['tls.rec'] : []
+  // Sequence of Packet Length and Time (SPLT) parsing for visualizer
+  const rawSplt = currentFlow['tls.rec'] ?? currentFlow['tls_rec'] ?? currentFlow['rec']
+  const isMalformedSplt = rawSplt !== undefined && rawSplt !== null && !Array.isArray(rawSplt)
+  const isSequenceSupplied = Array.isArray(rawSplt) && rawSplt.length > 0
+  const actualRecordCount = Array.isArray(rawSplt) ? Math.min(rawSplt.length, 20) : 0
+  const paddedCount = isSequenceSupplied ? Math.max(0, 20 - actualRecordCount) : 0
+  const spltRecords: number[] = Array.isArray(rawSplt) ? rawSplt : []
 
   return (
     <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-16">
@@ -404,63 +409,141 @@ export default function EncryptedLab() {
 
                 {/* SPLT Record Lengths Visualizer */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                      <BarChart3 size={14} className="text-indigo-400" />
-                      SPLT Sequence: First 20 TLS Record Lengths
-                    </h3>
-                    <span className="text-[10px] font-mono text-slate-500">
-                      + Client Sent | - Server Sent
-                    </span>
-                  </div>
-
-                  <div className="bg-black/40 p-3.5 rounded-xl border border-white/5 space-y-2">
-                    <div className="h-28 flex items-center justify-between gap-1 px-1">
-                      {Array.from({ length: 20 }).map((_, idx) => {
-                        const val = spltRecords[idx] || 0
-                        const isClient = val > 0
-                        const isServer = val < 0
-                        const absVal = Math.abs(val)
-                        const heightPct = Math.min(100, Math.max(8, (absVal / 1500) * 100))
-
-                        return (
-                          <div
-                            key={idx}
-                            className="flex-1 flex flex-col items-center justify-center h-full group relative"
-                          >
-                            <div className="w-full h-full flex flex-col justify-center items-center">
-                              {isClient && (
-                                <div
-                                  style={{ height: `${heightPct / 2}%` }}
-                                  className="w-full max-w-[12px] bg-indigo-500/80 rounded-t transition-all group-hover:bg-indigo-400"
-                                />
-                              )}
-                              <div className="w-full h-[1px] bg-slate-700 my-0.5" />
-                              {isServer && (
-                                <div
-                                  style={{ height: `${heightPct / 2}%` }}
-                                  className="w-full max-w-[12px] bg-cyan-500/80 rounded-b transition-all group-hover:bg-cyan-400"
-                                />
-                              )}
-                              {!isClient && !isServer && (
-                                <div className="w-1 h-1 rounded-full bg-slate-800" />
-                              )}
-                            </div>
-
-                            {/* Tooltip */}
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-full mb-1 z-20 pointer-events-none bg-slate-900 text-white text-[9px] font-mono px-1.5 py-0.5 rounded border border-white/10 shadow whitespace-nowrap">
-                              rec_{idx}: {val} B
-                            </div>
-                          </div>
-                        )
-                      })}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <BarChart3 size={14} className="text-indigo-400" />
+                        SPLT Sequence: First 20 TLS Record Lengths
+                      </h3>
+                      {isSequenceSupplied && (
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-medium">
+                          {actualRecordCount} of 20 records {paddedCount > 0 && `(${paddedCount} padded)`}
+                        </span>
+                      )}
                     </div>
-                    <div className="flex justify-between text-[9px] font-mono text-slate-500 pt-1 border-t border-white/5">
-                      <span>rec_0 (ClientHello)</span>
-                      <span>rec_10</span>
-                      <span>rec_19 (Flow Tail)</span>
+                    <div className="flex items-center gap-3 text-[10px] font-mono">
+                      <span className="flex items-center gap-1 text-indigo-400">
+                        <span className="w-2 h-2 rounded-sm bg-indigo-500/85 inline-block" />
+                        + Client Sent
+                      </span>
+                      <span className="flex items-center gap-1 text-cyan-400">
+                        <span className="w-2 h-2 rounded-sm bg-cyan-500/85 inline-block" />
+                        - Server Sent
+                      </span>
+                      <span className="flex items-center gap-1 text-slate-400">
+                        <span className="w-2 h-0.5 bg-slate-600 inline-block" />
+                        Padding (No Record)
+                      </span>
                     </div>
                   </div>
+
+                  {!isSequenceSupplied ? (
+                    <div className="bg-black/40 p-6 rounded-xl border border-white/5 text-center flex flex-col items-center justify-center space-y-1.5 py-8">
+                      <BarChart3 size={24} className="text-slate-600 mb-1" />
+                      <span className="text-xs font-mono font-medium text-slate-300">
+                        {isMalformedSplt
+                          ? 'Invalid or malformed TLS record sequence.'
+                          : 'No TLS record-length data available.'}
+                      </span>
+                      <span className="text-[11px] text-slate-500 max-w-md">
+                        {isMalformedSplt
+                          ? 'The provided "tls.rec" field must be an array of signed record length numbers.'
+                          : 'This connection metadata does not include a Sequence of Packet Length and Time (SPLT) record length sequence. No fabricated sequence was generated.'}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="bg-black/40 p-3.5 rounded-xl border border-white/5 space-y-2">
+                      <div className="h-28 flex items-stretch justify-between gap-1 px-1">
+                        {Array.from({ length: 20 }).map((_, idx) => {
+                          const isPadded = idx >= actualRecordCount
+                          const rawVal = spltRecords[idx]
+                          const val = !isPadded && rawVal !== undefined && rawVal !== null && !isNaN(Number(rawVal))
+                            ? Number(rawVal)
+                            : 0
+                          const isClient = !isPadded && val > 0
+                          const isServer = !isPadded && val < 0
+                          const isZero = !isPadded && val === 0
+                          const absVal = Math.abs(val)
+                          const heightPct = isPadded || isZero
+                            ? 0
+                            : Math.min(100, Math.max(10, (absVal / 1500) * 100))
+
+                          return (
+                            <div
+                              key={idx}
+                              className={`flex-1 flex flex-col h-full group relative transition-colors rounded ${
+                                isPadded ? 'bg-slate-900/20' : 'bg-white/[0.02]'
+                              }`}
+                            >
+                              {/* Upper Half: Client-to-server (positive) */}
+                              <div className="h-[calc(50%-0.5px)] w-full flex flex-col justify-end items-center px-0.5">
+                                {isClient && (
+                                  <div
+                                    style={{ height: `${heightPct}%` }}
+                                    className="w-full max-w-[12px] bg-indigo-500/85 rounded-t transition-all group-hover:bg-indigo-400 group-hover:brightness-110 shadow-sm shadow-indigo-500/20"
+                                  />
+                                )}
+                              </div>
+
+                              {/* Center 1px Horizontal Baseline (Anchored uniformly across all 20 columns) */}
+                              <div className="h-[1px] w-full relative flex items-center justify-center">
+                                <div
+                                  className={`w-full h-[1px] ${
+                                    isPadded ? 'bg-slate-700/30' : 'bg-slate-500/70'
+                                  }`}
+                                />
+                                {isZero && (
+                                  <div
+                                    className="absolute w-2 h-1 bg-amber-400/90 rounded-sm z-10 shadow-sm shadow-amber-400/30"
+                                    title="Actual 0 B Record"
+                                  />
+                                )}
+                                {isPadded && (
+                                  <div className="absolute w-1 h-0.5 bg-slate-700/40 rounded-full" />
+                                )}
+                              </div>
+
+                              {/* Lower Half: Server-to-client (negative) */}
+                              <div className="h-[calc(50%-0.5px)] w-full flex flex-col justify-start items-center px-0.5">
+                                {isServer && (
+                                  <div
+                                    style={{ height: `${heightPct}%` }}
+                                    className="w-full max-w-[12px] bg-cyan-500/85 rounded-b transition-all group-hover:bg-cyan-400 group-hover:brightness-110 shadow-sm shadow-cyan-500/20"
+                                  />
+                                )}
+                              </div>
+
+                              {/* Tooltip */}
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-full mb-1 z-30 pointer-events-none bg-slate-900/95 text-white text-[9px] font-mono px-2 py-1 rounded-md border border-white/10 shadow-xl whitespace-nowrap space-y-0.5">
+                                <div className="flex items-center justify-between gap-2 border-b border-white/5 pb-0.5 font-bold">
+                                  <span>rec_{idx}</span>
+                                  <span className={isPadded ? 'text-slate-400' : isClient ? 'text-indigo-400' : isServer ? 'text-cyan-400' : 'text-amber-400'}>
+                                    {isPadded ? 'Padded Position' : isClient ? 'Client → Server' : isServer ? 'Server → Client' : 'Zero-length Record'}
+                                  </span>
+                                </div>
+                                <div className="text-slate-200">
+                                  {isPadded ? (
+                                    <span className="text-slate-400">0 B (padding — no record supplied)</span>
+                                  ) : (
+                                    <span>{val > 0 ? `+${val}` : `${val}`} B</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      <div className="flex justify-between items-center text-[9px] font-mono text-slate-500 pt-1 border-t border-white/5">
+                        <span>rec_0 (ClientHello)</span>
+                        {isSequenceSupplied && paddedCount > 0 && (
+                          <span className="text-slate-500/80">
+                            Active: rec_0–rec_{actualRecordCount - 1} · Padded: rec_{actualRecordCount}–rec_19
+                          </span>
+                        )}
+                        <span>rec_19 (Tail)</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Inference Trigger */}
