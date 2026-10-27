@@ -296,20 +296,26 @@ export default function AdversarialLab() {
             </p>
           </div>
 
-          <div className="glass-card p-4 space-y-1 border border-white/10">
+          <div className="glass-card p-4 space-y-1 border border-white/10" title="Clean Benign False Positive Rate (FPR)">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
-                Benign False Alarm Rate
+                Clean Benign FPR
               </span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
-                0.0% Penalty
+              <span
+                className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold cursor-help"
+                title="Change in false-positive rate after hardening, not the absolute false-positive rate"
+              >
+                {metrics ? `ΔFPR: ${(metrics.clean_metrics.fpr_penalty >= 0 ? '+' : '')}${(metrics.clean_metrics.fpr_penalty * 100).toFixed(2)} pp` : 'ΔFPR: +0.00 pp'}
               </span>
             </div>
             <div className="text-2xl font-bold text-amber-400 font-mono">
               {metrics ? `${(metrics.clean_metrics.hardened_fpr * 100).toFixed(2)}%` : '8.07%'}
             </div>
-            <p className="text-[11px] text-slate-500">
-              Matches baseline <span className="text-slate-300 font-mono">8.07%</span> (Zero clean traffic drift)
+            <p
+              className="text-[11px] text-slate-500"
+              title="Change in false-positive rate after hardening, not the absolute false-positive rate"
+            >
+              Matches baseline <span className="text-slate-300 font-mono">8.07%</span> (Zero clean traffic drift). ΔFPR represents the change after hardening, not the absolute rate.
             </p>
           </div>
         </div>
