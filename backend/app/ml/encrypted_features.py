@@ -346,7 +346,7 @@ def load_clean_encrypted_dataset(
             for s in b.column("meta.sample.id").to_pylist():
                 clean_sample_ids.add(s)
 
-    clean_arr = pa.array(list(clean_sample_ids))
+    clean_arr = pa.array(sorted(list(clean_sample_ids)))
 
     # 2. PyArrow compute filter for candidate clean rows
     dataset = ds.dataset(str(data_path), format="parquet")
@@ -425,6 +425,7 @@ def load_clean_encrypted_dataset(
         dict_data["label"] = np.array(labels, dtype=np.int32)
         dict_data["meta.sample.id"] = samps
         dict_data["meta.malware.family"] = [f or "benign_service" for f in fams]
+        dict_data["is_clean_control"] = np.array([s in clean_sample_ids for s in samps], dtype=bool)
 
         # Chronological dates
         dates = [int(s[:6]) if (len(s) >= 6 and s[:6].isdigit()) else 0 for s in samps]
@@ -455,7 +456,7 @@ def load_clean_encrypted_dataset(
     # Grouped sample-ID sampling if requested (preserves complete execution groups)
     rng = np.random.default_rng(random_state)
     if max_train_samples and len(df_train) > max_train_samples:
-        all_train_samps = np.array(list(train_sample_ids))
+        all_train_samps = np.array(sorted(list(train_sample_ids)))
         rng.shuffle(all_train_samps)
         selected_samps: set[str] = set()
         cur_count = 0
@@ -468,7 +469,7 @@ def load_clean_encrypted_dataset(
         df_train = df_train[df_train["meta.sample.id"].isin(selected_samps)].copy()
 
     if max_test_samples and len(df_test) > max_test_samples:
-        all_test_samps = np.array(list(test_sample_ids))
+        all_test_samps = np.array(sorted(list(test_sample_ids)))
         rng.shuffle(all_test_samps)
         selected_test_samps: set[str] = set()
         cur_count = 0
@@ -495,6 +496,7 @@ def load_clean_encrypted_dataset(
         "train_dates": f"{df_train['date'].min()} to {df_train['date'].max()}" if not df_train.empty else "none",
         "test_dates": f"{df_test['date'].min()} to {df_test['date'].max()}" if not df_test.empty else "none",
         "natural_zero_days": sorted(list(natural_zero_days)),
+        "clean_sample_ids": sorted(list(clean_sample_ids)),
     }
 
     return df_train, df_test, meta_info

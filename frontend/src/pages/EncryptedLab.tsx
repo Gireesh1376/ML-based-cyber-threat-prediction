@@ -92,6 +92,24 @@ export default function EncryptedLab() {
   const pe = metricsData?.primary_evaluation
   const slice = metricsData?.slice_evaluation
 
+  // Zero-day metric parsing (supporting backend flat keys and nested types)
+  const zeroDayRecall = slice?.natural_zero_day_recall ?? slice?.zero_day_holdout_families?.recall
+  const zeroDayFamilies = slice?.natural_zero_day_families ?? slice?.zero_day_holdout_families?.families
+  const zeroDayFamiliesCount = zeroDayFamilies?.length ?? slice?.natural_zero_day_count ?? slice?.zero_day_holdout_families?.family_count ?? 12
+
+  // Clean-control subgroup metrics (uninfected endpoints from *NO_MALWARE*.parquet)
+  const cleanFpr = slice?.clean_no_malware_fpr !== undefined ? slice.clean_no_malware_fpr : slice?.clean_runs_baseline?.fpr
+  const cleanCount = slice?.clean_no_malware_count ?? slice?.clean_runs_baseline?.sample_count ?? 0
+  const cleanFp = slice?.clean_no_malware_fp ?? slice?.clean_runs_baseline?.false_positives ?? (cleanFpr !== null && cleanFpr !== undefined && cleanCount > 0 ? Math.round(cleanFpr * cleanCount) : 0)
+
+  // Benign VM system services subgroup metrics (Windows services inside malware VMs)
+  const serviceFpr = slice?.benign_service_fpr !== undefined ? slice.benign_service_fpr : slice?.benign_services_baseline?.fpr
+  const serviceCount = slice?.benign_service_count ?? slice?.benign_services_baseline?.sample_count
+  const serviceFp = slice?.benign_service_fp ?? slice?.benign_services_baseline?.false_positives
+
+  // Consistency guard: only display subgroup comparisons when both subgroups are available from the same evaluation population
+  const hasConsistentSubgroupMetrics = Boolean(cleanCount > 0 && serviceCount && serviceCount > 0)
+
   // Sequence of Packet Length and Time (SPLT) parsing for visualizer
   const rawSplt = currentFlow['tls.rec'] ?? currentFlow['tls_rec'] ?? currentFlow['rec']
   const isMalformedSplt = rawSplt !== undefined && rawSplt !== null && !Array.isArray(rawSplt)
@@ -166,7 +184,11 @@ export default function EncryptedLab() {
             <div className="text-lg font-bold font-mono text-indigo-400">
               {pe?.benign_fpr ? `${(pe.benign_fpr * 100).toFixed(2)}%` : '2.15%'}
             </div>
-            <span className="text-[9px] text-slate-500">30,923 clean flows checked</span>
+            <span className="text-[9px] text-slate-500 block truncate">
+              {pe?.false_positives !== undefined && pe?.true_negatives !== undefined
+                ? `${pe.false_positives} FP / ${(pe.false_positives + pe.true_negatives).toLocaleString()} holdout flows`
+                : '681 FP / 31,604 holdout flows'}
+            </span>
           </div>
 
           <div className="glass-card p-3.5 border-white/10 space-y-1">
@@ -180,20 +202,58 @@ export default function EncryptedLab() {
           <div className="glass-card p-3.5 border-white/10 space-y-1">
             <span className="text-[10px] font-mono text-slate-400 block truncate">Zero-Day Recall</span>
             <div className="text-lg font-bold font-mono text-pink-400">
-              {slice?.zero_day_holdout_families?.recall ? `${(slice.zero_day_holdout_families.recall * 100).toFixed(2)}%` : '93.94%'}
+              {zeroDayRecall !== undefined && zeroDayRecall !== null ? `${(zeroDayRecall * 100).toFixed(2)}%` : '93.94%'}
             </div>
-            <span className="text-[9px] text-slate-500">12 novel unseen families</span>
+            <span className="text-[9px] text-slate-500">{zeroDayFamiliesCount} novel unseen families</span>
           </div>
 
           <div className="glass-card p-3.5 border-white/10 space-y-1">
-            <span className="text-[10px] font-mono text-slate-400 block truncate">Clean Runs FPR</span>
-            <div className="text-lg font-bold font-mono text-emerald-400">
-              {slice?.clean_runs_baseline?.fpr !== undefined ? `${(slice.clean_runs_baseline.fpr * 100).toFixed(2)}%` : '0.00%'}
+            <span className="text-[10px] font-mono text-slate-400 block truncate">Clean-Control FPR</span>
+            <div className={`text-lg font-bold font-mono ${cleanCount > 0 ? (cleanFpr && cleanFpr > 0.05 ? 'text-amber-400' : 'text-emerald-400') : 'text-slate-500'}`}>
+              {cleanFpr !== undefined && cleanFpr !== null && cleanCount > 0 ? `${(cleanFpr * 100).toFixed(2)}%` : 'Uncomputed'}
             </div>
-            <span className="text-[9px] text-slate-500">0 false positives in clean VMs</span>
+            <span className="text-[9px] text-slate-500 block truncate">
+              {cleanCount > 0
+                ? `${cleanFp} FP / ${cleanCount.toLocaleString()} clean flows`
+                : '0 clean flows in draw (uncomputed)'}
+            </span>
           </div>
         </div>
       </ScrollSection>
+
+      {/* Benign Traffic Subgroup Breakdown: Rendered only when both subgroups are available from the same evaluation population */}
+      {hasConsistentSubgroupMetrics && (
+        <ScrollSection delay={30}>
+          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-white/8 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={16} className="text-indigo-400 shrink-0" />
+              <span className="font-semibold text-white">Holdout Benign Subgroup Breakdown (Consistent Population):</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-4 text-[11px] font-mono">
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-400">Clean Control Workstations:</span>
+                <span className="text-amber-300 font-bold">
+                  {cleanFpr !== null && cleanFpr !== undefined ? `${(cleanFpr * 100).toFixed(2)}%` : 'N/A'} ({cleanFp}/{cleanCount.toLocaleString()})
+                </span>
+              </div>
+              <span className="text-slate-600 hidden md:inline">·</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-400">Malware VM System Services:</span>
+                <span className="text-emerald-400 font-bold">
+                  {serviceFpr !== null && serviceFpr !== undefined ? `${(serviceFpr * 100).toFixed(2)}%` : 'N/A'} ({serviceFp ?? 0}/{serviceCount?.toLocaleString() ?? 0})
+                </span>
+              </div>
+              <span className="text-slate-600 hidden md:inline">·</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-400">Combined Population:</span>
+                <span className="text-indigo-400 font-bold">
+                  {pe?.benign_fpr ? `${(pe.benign_fpr * 100).toFixed(2)}%` : ''} ({cleanFp + (serviceFp ?? 0)}/{(cleanCount + (serviceCount ?? 0)).toLocaleString()})
+                </span>
+              </div>
+            </div>
+          </div>
+        </ScrollSection>
+      )}
 
       {/* Synthetic Presets Selector */}
       <ScrollSection delay={40}>

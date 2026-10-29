@@ -968,24 +968,41 @@ export default function AdversarialLab() {
               <div className="pt-2 border-t border-white/8 flex items-center justify-between">
                 <div>
                   <label className="text-xs font-semibold text-slate-300 block">Adaptive Attack Mode</label>
-                  <span className="text-[10px] text-slate-500">Target Hardened Model directly</span>
+                  <span className="text-[10px] text-slate-500">
+                    {selectedMethod === 'demgan'
+                      ? 'Model-independent heuristic (static empirical centroid drift)'
+                      : 'Target Hardened Model directly'}
+                  </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsAdaptive(!isAdaptive)}
-                  className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-all border cursor-pointer ${
-                    isAdaptive
-                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-sm shadow-rose-500/20'
-                      : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'
-                  }`}
-                >
-                  {isAdaptive ? 'ADAPTIVE: ON' : 'TRANSFER: BASELINE'}
-                </button>
+                {selectedMethod === 'demgan' ? (
+                  <span className="text-[10px] font-mono font-medium px-2 py-1 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                    Not applicable — model-independent heuristic
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsAdaptive(!isAdaptive)}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-all border cursor-pointer ${
+                      isAdaptive
+                        ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-sm shadow-rose-500/20'
+                        : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'
+                    }`}
+                  >
+                    {isAdaptive ? 'ADAPTIVE: ON' : 'TRANSFER: BASELINE'}
+                  </button>
+                )}
               </div>
 
               {/* Re-simulate Trigger */}
               <button
-                onClick={() => runCustomSimulation(selectedPreset, selectedMethod, epsilon, isAdaptive)}
+                onClick={() =>
+                  runCustomSimulation(
+                    selectedPreset,
+                    selectedMethod,
+                    epsilon,
+                    selectedMethod === 'demgan' ? false : isAdaptive
+                  )
+                }
                 disabled={busy}
                 className="w-full py-2.5 rounded-xl text-white font-semibold text-xs tracking-wide shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 bg-gradient-to-r from-rose-500 to-indigo-600 hover:from-rose-600 hover:to-indigo-700 shadow-rose-500/20"
               >

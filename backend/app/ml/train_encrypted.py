@@ -219,10 +219,26 @@ def train_encrypted_pipeline(
     zd_rec = float(recall_score(y_test[zd_mask], (best_y_prob[zd_mask] >= 0.5).astype(int), zero_division=0)) if zd_mask.sum() > 0 else 0.0
     print(f"  Slice B: Natural Zero-Day Families Recall: {zd_rec * 100:.2f}% ({zd_mask.sum():,} flows across {len(split_meta['natural_zero_days'])} unseen families)")
 
-    # Slice C: Clean baseline NO_MALWARE runs in test
-    clean_run_mask = df_test["meta.sample.id"].apply(lambda s: "NO_MALWARE" in s).to_numpy() & (y_test == 0)
-    clean_fpr = float(((best_y_prob[clean_run_mask] >= 0.5).sum()) / clean_run_mask.sum()) if clean_run_mask.sum() > 0 else 0.0
-    print(f"  Slice C: Clean NO_MALWARE Runs FPR       : {clean_fpr * 100:.2f}% ({clean_run_mask.sum():,} flows)")
+    # Slice C: Clean baseline NO_MALWARE runs in test (provenance from *NO_MALWARE*.parquet source files)
+    clean_sids = set(split_meta.get("clean_sample_ids", []))
+    if "is_clean_control" in df_test.columns:
+        clean_run_mask = df_test["is_clean_control"].to_numpy() & (y_test == 0)
+    else:
+        clean_run_mask = df_test["meta.sample.id"].isin(clean_sids).to_numpy() & (y_test == 0)
+
+    clean_count = int(clean_run_mask.sum())
+    clean_fp = int(((best_y_prob[clean_run_mask] >= 0.5).sum()))
+    clean_fpr = float(clean_fp / clean_count) if clean_count > 0 else None
+    clean_fpr_disp = f"{clean_fpr * 100:.2f}% ({clean_fp:,}/{clean_count:,} flows)" if clean_fpr is not None else "N/A (0 flows)"
+    print(f"  Slice C: Clean Control Runs FPR         : {clean_fpr_disp}")
+
+    # Slice D: Benign services in malware VMs (disjoint subgroup)
+    service_run_mask = (~clean_run_mask) & (y_test == 0)
+    service_count = int(service_run_mask.sum())
+    service_fp = int(((best_y_prob[service_run_mask] >= 0.5).sum()))
+    service_fpr = float(service_fp / service_count) if service_count > 0 else None
+    service_fpr_disp = f"{service_fpr * 100:.2f}% ({service_fp:,}/{service_count:,} flows)" if service_fpr is not None else "N/A (0 flows)"
+    print(f"  Slice D: Malware VM Benign Services FPR : {service_fpr_disp}")
 
     # Feature Importance (Top 15)
     importances = best_clf.feature_importances_
@@ -271,8 +287,12 @@ def train_encrypted_pipeline(
             "natural_zero_day_recall": round(zd_rec, 4),
             "natural_zero_day_count": int(zd_mask.sum()),
             "natural_zero_day_families": split_meta["natural_zero_days"],
-            "clean_no_malware_fpr": round(clean_fpr, 4),
-            "clean_no_malware_count": int(clean_run_mask.sum()),
+            "clean_no_malware_fpr": round(clean_fpr, 4) if clean_fpr is not None else None,
+            "clean_no_malware_count": clean_count,
+            "clean_no_malware_fp": clean_fp,
+            "benign_service_fpr": round(service_fpr, 4) if service_fpr is not None else None,
+            "benign_service_count": service_count,
+            "benign_service_fp": service_fp,
         },
         "threshold_sweep": sweep_metrics,
         "top_features": top_features,

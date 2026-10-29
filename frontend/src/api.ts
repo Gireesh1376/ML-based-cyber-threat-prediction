@@ -485,8 +485,23 @@ export type EncryptedMetricsResponse = {
     roc_auc: number
     pr_auc: number
     confusion_matrix: number[][]
+    true_positives?: number
+    true_negatives?: number
+    false_positives?: number
+    false_negatives?: number
   }
   slice_evaluation?: {
+    seen_families_recall?: number
+    seen_families_count?: number
+    natural_zero_day_recall?: number
+    natural_zero_day_count?: number
+    natural_zero_day_families?: string[]
+    clean_no_malware_fpr?: number | null
+    clean_no_malware_count?: number
+    clean_no_malware_fp?: number
+    benign_service_fpr?: number | null
+    benign_service_count?: number
+    benign_service_fp?: number
     seen_attack_families?: {
       sample_count?: number
       recall?: number
@@ -500,6 +515,11 @@ export type EncryptedMetricsResponse = {
       families?: string[]
     }
     clean_runs_baseline?: {
+      sample_count?: number
+      fpr?: number
+      false_positives?: number
+    }
+    benign_services_baseline?: {
       sample_count?: number
       fpr?: number
       false_positives?: number

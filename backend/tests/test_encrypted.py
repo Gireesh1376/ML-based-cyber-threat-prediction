@@ -7,7 +7,7 @@ from typing import Any
 import numpy as np
 import pytest
 
-from app.config import MODELS_DIR
+from app.config import DATA_DIR, MODELS_DIR
 from app.ml.encrypted_features import (
     CATEGORICAL_COLS,
     FLOW_NUMERICAL_COLS,
@@ -277,4 +277,97 @@ def test_encrypted_pcap_unsupported():
     detail = res.json().get("detail", "")
     assert "unsupported in Phase 2" in detail
     assert "payloads are never decrypted" in detail.lower()
+
+
+def test_clean_control_provenance_and_subgroup_disjointness():
+    """
+    Verify that clean-control runs (*NO_MALWARE*.parquet) and malware runs
+    have disjoint execution groups, and that benign subgroups partition the negatives exactly.
+    """
+    import glob
+    import os
+    import pyarrow.dataset as ds
+    from app.ml.encrypted_features import load_clean_encrypted_dataset
+
+    data_dir = DATA_DIR / "raw" / "encrypted_traffic" / "malware" / "malware.parquet"
+    if not data_dir.exists():
+        pytest.skip("Raw encrypted traffic dataset not found.")
+
+    # 1. Verify sample ID disjointness directly on raw dataset
+    nm_files = glob.glob(os.path.join(str(data_dir), "*NO_MALWARE*.parquet"))
+    mal_files = [f for f in glob.glob(os.path.join(str(data_dir), "*.parquet")) if "NO_MALWARE" not in f]
+
+    ds_nm = ds.dataset(nm_files, format="parquet")
+    clean_sids = set()
+    for b in ds_nm.scanner(columns=["meta.sample.id"]).to_batches():
+        for s in b.column("meta.sample.id").to_pylist():
+            clean_sids.add(s)
+
+    # Sample a subset of malware files to verify zero overlap
+    ds_mal = ds.dataset(mal_files[:10], format="parquet")
+    mal_sids = set()
+    for b in ds_mal.scanner(columns=["meta.sample.id"]).to_batches():
+        for s in b.column("meta.sample.id").to_pylist():
+            mal_sids.add(s)
+
+    assert len(clean_sids) > 0
+    assert len(clean_sids.intersection(mal_sids)) == 0, "Clean control and malware sample IDs must be strictly disjoint!"
+
+    # 2. Verify loader outputs is_clean_control and clean_sample_ids
+    df_train, df_test, split_meta = load_clean_encrypted_dataset(
+        data_dir=data_dir,
+        cutoff_date=250922,
+        max_train_samples=500,
+        max_test_samples=500,
+        random_state=42,
+    )
+
+    assert "is_clean_control" in df_test.columns
+    assert "clean_sample_ids" in split_meta
+    assert len(split_meta["clean_sample_ids"]) == len(clean_sids)
+
+    # 3. Verify exact subgroup partitioning
+    y_test = df_test["label"].to_numpy()
+    clean_control_mask = df_test["is_clean_control"].to_numpy() & (y_test == 0)
+    service_mask = (~df_test["is_clean_control"].to_numpy()) & (y_test == 0)
+    all_benign_mask = (y_test == 0)
+
+    # Disjointness
+    assert (clean_control_mask & service_mask).sum() == 0, "Subgroups must be mutually exclusive!"
+
+    # Exact reconciliation
+    assert (clean_control_mask | service_mask).sum() == all_benign_mask.sum(), "Subgroups must partition all benign flows!"
+    assert clean_control_mask.sum() + service_mask.sum() == all_benign_mask.sum()
+
+
+def test_deterministic_execution_group_sampling():
+    """
+    Verify that load_clean_encrypted_dataset produces 100% deterministic sample selection
+    across separate calls by sorting sample IDs before seeded shuffle.
+    """
+    from app.ml.encrypted_features import load_clean_encrypted_dataset
+
+    data_dir = DATA_DIR / "raw" / "encrypted_traffic" / "malware" / "malware.parquet"
+    if not data_dir.exists():
+        pytest.skip("Raw encrypted traffic dataset not found.")
+
+    df_tr1, df_te1, _ = load_clean_encrypted_dataset(
+        data_dir=data_dir,
+        cutoff_date=250922,
+        max_train_samples=500,
+        max_test_samples=500,
+        random_state=42,
+    )
+
+    df_tr2, df_te2, _ = load_clean_encrypted_dataset(
+        data_dir=data_dir,
+        cutoff_date=250922,
+        max_train_samples=500,
+        max_test_samples=500,
+        random_state=42,
+    )
+
+    assert df_te1["meta.sample.id"].tolist() == df_te2["meta.sample.id"].tolist(), "Sample IDs must be identically ordered across runs!"
+    assert df_te1["label"].tolist() == df_te2["label"].tolist(), "Labels must be identically ordered across runs!"
+    assert len(df_te1) == len(df_te2), "Row counts must be identical across runs!"
 
