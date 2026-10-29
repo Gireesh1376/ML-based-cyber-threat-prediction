@@ -95,20 +95,41 @@ export default function EncryptedLab() {
   // Zero-day metric parsing (supporting backend flat keys and nested types)
   const zeroDayRecall = slice?.natural_zero_day_recall ?? slice?.zero_day_holdout_families?.recall
   const zeroDayFamilies = slice?.natural_zero_day_families ?? slice?.zero_day_holdout_families?.families
-  const zeroDayFamiliesCount = zeroDayFamilies?.length ?? slice?.natural_zero_day_count ?? slice?.zero_day_holdout_families?.family_count ?? 12
+  const zeroDayFamiliesCount =
+    zeroDayFamilies?.length ?? slice?.natural_zero_day_count ?? slice?.zero_day_holdout_families?.family_count ?? null
 
   // Clean-control subgroup metrics (uninfected endpoints from *NO_MALWARE*.parquet)
-  const cleanFpr = slice?.clean_no_malware_fpr !== undefined ? slice.clean_no_malware_fpr : slice?.clean_runs_baseline?.fpr
+  const cleanFpr = slice?.clean_no_malware_fpr !== undefined ? slice.clean_no_malware_fpr : (slice?.clean_runs_baseline?.fpr ?? null)
   const cleanCount = slice?.clean_no_malware_count ?? slice?.clean_runs_baseline?.sample_count ?? 0
   const cleanFp = slice?.clean_no_malware_fp ?? slice?.clean_runs_baseline?.false_positives ?? (cleanFpr !== null && cleanFpr !== undefined && cleanCount > 0 ? Math.round(cleanFpr * cleanCount) : 0)
 
   // Benign VM system services subgroup metrics (Windows services inside malware VMs)
-  const serviceFpr = slice?.benign_service_fpr !== undefined ? slice.benign_service_fpr : slice?.benign_services_baseline?.fpr
-  const serviceCount = slice?.benign_service_count ?? slice?.benign_services_baseline?.sample_count
-  const serviceFp = slice?.benign_service_fp ?? slice?.benign_services_baseline?.false_positives
+  const serviceFpr = slice?.benign_service_fpr !== undefined ? slice.benign_service_fpr : (slice?.benign_services_baseline?.fpr ?? null)
+  const serviceCount = slice?.benign_service_count ?? slice?.benign_services_baseline?.sample_count ?? 0
+  const serviceFp = slice?.benign_service_fp ?? slice?.benign_services_baseline?.false_positives ?? (serviceFpr !== null && serviceFpr !== undefined && serviceCount > 0 ? Math.round(serviceFpr * serviceCount) : 0)
 
-  // Consistency guard: only display subgroup comparisons when both subgroups are available from the same evaluation population
-  const hasConsistentSubgroupMetrics = Boolean(cleanCount > 0 && serviceCount && serviceCount > 0)
+  // Primary benchmark evaluation population denominators
+  const holdoutNegatives = pe?.true_negatives !== undefined && pe?.false_positives !== undefined
+    ? pe.true_negatives + pe.false_positives
+    : null
+  const holdoutPositives = pe?.true_positives !== undefined && pe?.false_negatives !== undefined
+    ? pe.true_positives + pe.false_negatives
+    : null
+  const totalHoldoutFlows = holdoutNegatives !== null && holdoutPositives !== null
+    ? holdoutNegatives + holdoutPositives
+    : (metricsData?.split_summary?.test_samples ?? (metricsData?.split_summary as any)?.test_rows ?? null)
+
+  // Subgroup counts and population-consistent FPR calculation:
+  // Combined FPR must be strictly calculated from (clean FP + service FP) / (clean benign flows + service benign flows)
+  const hasSubgroupCounts = cleanCount > 0 && serviceCount > 0 && cleanFp >= 0 && serviceFp >= 0
+  const subgroupTotalBenign = cleanCount + serviceCount
+  const subgroupTotalFp = cleanFp + serviceFp
+  const subgroupCombinedFpr = subgroupTotalBenign > 0 ? subgroupTotalFp / subgroupTotalBenign : null
+
+  // Does the subgroup benign total match the primary evaluation negative denominator?
+  const isExactPartition = holdoutNegatives !== null && subgroupTotalBenign === holdoutNegatives
+  // Only display subgroup breakdown when valid counts exist and provenance is confirmed
+  const showSubgroupBreakdown = Boolean(hasSubgroupCounts && subgroupCombinedFpr !== null)
 
   // Sequence of Packet Length and Time (SPLT) parsing for visualizer
   const rawSplt = currentFlow['tls.rec'] ?? currentFlow['tls_rec'] ?? currentFlow['rec']
@@ -166,88 +187,100 @@ export default function EncryptedLab() {
           <div className="glass-card p-3.5 border-white/10 space-y-1">
             <span className="text-[10px] font-mono text-slate-400 block truncate">Holdout Accuracy</span>
             <div className="text-lg font-bold font-mono text-emerald-400">
-              {pe?.accuracy ? `${(pe.accuracy * 100).toFixed(2)}%` : '97.99%'}
+              {pe?.accuracy !== undefined && pe?.accuracy !== null ? `${(pe.accuracy * 100).toFixed(2)}%` : '—'}
             </div>
-            <span className="text-[9px] text-slate-500">50,377 held-out flows</span>
+            <span className="text-[9px] text-slate-500">
+              {totalHoldoutFlows !== null ? `${totalHoldoutFlows.toLocaleString()} held-out flows` : 'Benchmark not loaded'}
+            </span>
           </div>
 
           <div className="glass-card p-3.5 border-white/10 space-y-1">
             <span className="text-[10px] font-mono text-slate-400 block truncate">Attack Recall</span>
             <div className="text-lg font-bold font-mono text-cyan-400">
-              {pe?.recall ? `${(pe.recall * 100).toFixed(2)}%` : '98.23%'}
+              {pe?.recall !== undefined && pe?.recall !== null ? `${(pe.recall * 100).toFixed(2)}%` : '—'}
             </div>
-            <span className="text-[9px] text-slate-500">18,441 malware flows caught</span>
+            <span className="text-[9px] text-slate-500">
+              {pe?.true_positives !== undefined && pe?.true_positives !== null ? `${pe.true_positives.toLocaleString()} malware flows caught` : '—'}
+            </span>
           </div>
 
           <div className="glass-card p-3.5 border-white/10 space-y-1">
             <span className="text-[10px] font-mono text-slate-400 block truncate">Benign FPR</span>
             <div className="text-lg font-bold font-mono text-indigo-400">
-              {pe?.benign_fpr ? `${(pe.benign_fpr * 100).toFixed(2)}%` : '2.15%'}
+              {pe?.benign_fpr !== undefined && pe?.benign_fpr !== null ? `${(pe.benign_fpr * 100).toFixed(2)}%` : '—'}
             </div>
             <span className="text-[9px] text-slate-500 block truncate">
-              {pe?.false_positives !== undefined && pe?.true_negatives !== undefined
-                ? `${pe.false_positives} FP / ${(pe.false_positives + pe.true_negatives).toLocaleString()} holdout flows`
-                : '681 FP / 31,604 holdout flows'}
+              {pe?.false_positives !== undefined && holdoutNegatives !== null
+                ? `${pe.false_positives.toLocaleString()} FP / ${holdoutNegatives.toLocaleString()} holdout flows`
+                : '—'}
             </span>
           </div>
 
           <div className="glass-card p-3.5 border-white/10 space-y-1">
             <span className="text-[10px] font-mono text-slate-400 block truncate">ROC-AUC / PR-AUC</span>
             <div className="text-lg font-bold font-mono text-purple-400">
-              {pe?.roc_auc ? pe.roc_auc.toFixed(4) : '0.9983'}
+              {pe?.roc_auc !== undefined && pe?.roc_auc !== null ? pe.roc_auc.toFixed(4) : '—'}
             </div>
-            <span className="text-[9px] text-slate-500">PR-AUC: {pe?.pr_auc ? pe.pr_auc.toFixed(4) : '0.9970'}</span>
+            <span className="text-[9px] text-slate-500">
+              PR-AUC: {pe?.pr_auc !== undefined && pe?.pr_auc !== null ? pe.pr_auc.toFixed(4) : '—'}
+            </span>
           </div>
 
           <div className="glass-card p-3.5 border-white/10 space-y-1">
             <span className="text-[10px] font-mono text-slate-400 block truncate">Zero-Day Recall</span>
             <div className="text-lg font-bold font-mono text-pink-400">
-              {zeroDayRecall !== undefined && zeroDayRecall !== null ? `${(zeroDayRecall * 100).toFixed(2)}%` : '93.94%'}
+              {zeroDayRecall !== undefined && zeroDayRecall !== null ? `${(zeroDayRecall * 100).toFixed(2)}%` : '—'}
             </div>
-            <span className="text-[9px] text-slate-500">{zeroDayFamiliesCount} novel unseen families</span>
+            <span className="text-[9px] text-slate-500">
+              {zeroDayFamiliesCount !== null ? `${zeroDayFamiliesCount} novel unseen families` : 'Unseen families holdout'}
+            </span>
           </div>
 
           <div className="glass-card p-3.5 border-white/10 space-y-1">
             <span className="text-[10px] font-mono text-slate-400 block truncate">Clean-Control FPR</span>
-            <div className={`text-lg font-bold font-mono ${cleanCount > 0 ? (cleanFpr && cleanFpr > 0.05 ? 'text-amber-400' : 'text-emerald-400') : 'text-slate-500'}`}>
-              {cleanFpr !== undefined && cleanFpr !== null && cleanCount > 0 ? `${(cleanFpr * 100).toFixed(2)}%` : 'Uncomputed'}
+            <div className={`text-lg font-bold font-mono ${cleanCount > 0 ? (cleanFpr !== null && cleanFpr !== undefined && cleanFpr > 0.05 ? 'text-amber-400' : 'text-emerald-400') : 'text-slate-500'}`}>
+              {cleanFpr !== undefined && cleanFpr !== null && cleanCount > 0 ? `${(cleanFpr * 100).toFixed(2)}%` : (metricsData ? 'Uncomputed' : '—')}
             </div>
             <span className="text-[9px] text-slate-500 block truncate">
               {cleanCount > 0
-                ? `${cleanFp} FP / ${cleanCount.toLocaleString()} clean flows`
-                : '0 clean flows in draw (uncomputed)'}
+                ? `${cleanFp.toLocaleString()} FP / ${cleanCount.toLocaleString()} clean flows`
+                : (metricsData ? '0 clean flows in benchmark draw' : '—')}
             </span>
           </div>
         </div>
       </ScrollSection>
 
-      {/* Benign Traffic Subgroup Breakdown: Rendered only when both subgroups are available from the same evaluation population */}
-      {hasConsistentSubgroupMetrics && (
+      {/* Benign Traffic Subgroup Breakdown: Rendered only when both subgroups are available with valid counts */}
+      {showSubgroupBreakdown && subgroupCombinedFpr !== null && (
         <ScrollSection delay={30}>
           <div className="p-3.5 rounded-xl bg-slate-900/60 border border-white/8 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2">
               <ShieldCheck size={16} className="text-indigo-400 shrink-0" />
-              <span className="font-semibold text-white">Holdout Benign Subgroup Breakdown (Consistent Population):</span>
+              <span className="font-semibold text-white">
+                {isExactPartition
+                  ? 'Holdout Benign Subgroups (Partition of Benchmark Population):'
+                  : `Holdout Benign Subgroups (${subgroupTotalBenign.toLocaleString()} Flow Population):`}
+              </span>
             </div>
             <div className="flex flex-wrap items-center gap-4 text-[11px] font-mono">
               <div className="flex items-center gap-1.5">
                 <span className="text-slate-400">Clean Control Workstations:</span>
                 <span className="text-amber-300 font-bold">
-                  {cleanFpr !== null && cleanFpr !== undefined ? `${(cleanFpr * 100).toFixed(2)}%` : 'N/A'} ({cleanFp}/{cleanCount.toLocaleString()})
+                  {cleanFpr !== null && cleanFpr !== undefined ? `${(cleanFpr * 100).toFixed(2)}%` : 'N/A'} ({cleanFp.toLocaleString()}/{cleanCount.toLocaleString()})
                 </span>
               </div>
               <span className="text-slate-600 hidden md:inline">·</span>
               <div className="flex items-center gap-1.5">
                 <span className="text-slate-400">Malware VM System Services:</span>
                 <span className="text-emerald-400 font-bold">
-                  {serviceFpr !== null && serviceFpr !== undefined ? `${(serviceFpr * 100).toFixed(2)}%` : 'N/A'} ({serviceFp ?? 0}/{serviceCount?.toLocaleString() ?? 0})
+                  {serviceFpr !== null && serviceFpr !== undefined ? `${(serviceFpr * 100).toFixed(2)}%` : 'N/A'} ({serviceFp.toLocaleString()}/{serviceCount.toLocaleString()})
                 </span>
               </div>
               <span className="text-slate-600 hidden md:inline">·</span>
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-400">Combined Population:</span>
+                <span className="text-slate-400">Combined Population FPR:</span>
                 <span className="text-indigo-400 font-bold">
-                  {pe?.benign_fpr ? `${(pe.benign_fpr * 100).toFixed(2)}%` : ''} ({cleanFp + (serviceFp ?? 0)}/{(cleanCount + (serviceCount ?? 0)).toLocaleString()})
+                  {`${(subgroupCombinedFpr * 100).toFixed(2)}%`} ({subgroupTotalFp.toLocaleString()}/{subgroupTotalBenign.toLocaleString()})
                 </span>
               </div>
             </div>
@@ -639,53 +672,59 @@ export default function EncryptedLab() {
             {activeTab === 'ablation' && (
               <div className="space-y-4">
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Rigorous ablation study validating feature contributions across the chronological test split (50,377 flows):
+                  Feature ablation study validating incremental additions across the chronological holdout split:
                 </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs font-mono">
-                    <thead>
-                      <tr className="border-b border-white/10 text-slate-400">
-                        <th className="py-2 px-3">Configuration</th>
-                        <th className="py-2 px-3">Features</th>
-                        <th className="py-2 px-3">Accuracy</th>
-                        <th className="py-2 px-3">Recall</th>
-                        <th className="py-2 px-3">Benign FPR</th>
-                        <th className="py-2 px-3">ROC-AUC</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                      <tr className="text-slate-300">
-                        <td className="py-2.5 px-3 font-bold">Model A: Flow Transport Only</td>
-                        <td className="py-2.5 px-3">19</td>
-                        <td className="py-2.5 px-3">93.45%</td>
-                        <td className="py-2.5 px-3 text-amber-400">92.40%</td>
-                        <td className="py-2.5 px-3">5.92%</td>
-                        <td className="py-2.5 px-3">0.9782</td>
-                      </tr>
-                      <tr className="text-slate-300">
-                        <td className="py-2.5 px-3 font-bold">Model B: Flow + Handshake Metadata</td>
-                        <td className="py-2.5 px-3">51</td>
-                        <td className="py-2.5 px-3">96.80%</td>
-                        <td className="py-2.5 px-3 text-cyan-400">96.12%</td>
-                        <td className="py-2.5 px-3">2.79%</td>
-                        <td className="py-2.5 px-3">0.9941</td>
-                      </tr>
-                      <tr className="bg-indigo-500/10 text-white font-bold border-l-2 border-indigo-400">
-                        <td className="py-2.5 px-3">Model C: Full (+ 20 SPLT Records)</td>
-                        <td className="py-2.5 px-3">71</td>
-                        <td className="py-2.5 px-3 text-emerald-400">97.99%</td>
-                        <td className="py-2.5 px-3 text-emerald-400">98.23%</td>
-                        <td className="py-2.5 px-3 text-indigo-300">2.15%</td>
-                        <td className="py-2.5 px-3 text-purple-300">0.9983</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <div className="p-3 rounded-lg bg-black/30 border border-white/5 text-[11px] text-slate-400 space-y-1">
-                  <div className="font-bold text-slate-200">Ablation Takeaway:</div>
-                  Adding the 20-element SPLT sequence reduces missed malware by <strong>54.3%</strong> relative to Model B,
-                  demonstrating that early packet length bursts capture encrypted tool signatures even under dynamic TLS key exchange.
-                </div>
+                {metricsData?.ablation_comparison && Object.keys(metricsData.ablation_comparison).length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs font-mono">
+                      <thead>
+                        <tr className="border-b border-white/10 text-slate-400">
+                          <th className="py-2 px-3">Configuration</th>
+                          <th className="py-2 px-3">Features</th>
+                          <th className="py-2 px-3">Accuracy</th>
+                          <th className="py-2 px-3">Recall</th>
+                          <th className="py-2 px-3">Benign FPR</th>
+                          <th className="py-2 px-3">ROC-AUC</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {Object.entries(metricsData.ablation_comparison).map(([modelName, mInfo], idx) => {
+                          const isFullModel = idx === Object.keys(metricsData.ablation_comparison!).length - 1
+                          const featCount = mInfo.features_count ?? mInfo.features ?? '—'
+                          const acc = mInfo.accuracy !== undefined && mInfo.accuracy !== null ? `${(mInfo.accuracy * 100).toFixed(2)}%` : '—'
+                          const rec = mInfo.recall !== undefined && mInfo.recall !== null ? `${(mInfo.recall * 100).toFixed(2)}%` : '—'
+                          const fprVal = mInfo.benign_fpr !== undefined ? mInfo.benign_fpr : mInfo.fpr
+                          const fpr = fprVal !== undefined && fprVal !== null ? `${(fprVal * 100).toFixed(2)}%` : '—'
+                          const roc = mInfo.roc_auc !== undefined && mInfo.roc_auc !== null ? mInfo.roc_auc.toFixed(4) : '—'
+
+                          return (
+                            <tr
+                              key={modelName}
+                              className={isFullModel ? 'bg-indigo-500/10 text-white font-bold border-l-2 border-indigo-400' : 'text-slate-300'}
+                            >
+                              <td className="py-2.5 px-3 font-bold">{modelName}</td>
+                              <td className="py-2.5 px-3">{featCount}</td>
+                              <td className={`py-2.5 px-3 ${isFullModel ? 'text-emerald-400' : ''}`}>{acc}</td>
+                              <td className={`py-2.5 px-3 ${isFullModel ? 'text-emerald-400' : 'text-cyan-400'}`}>{rec}</td>
+                              <td className={`py-2.5 px-3 ${isFullModel ? 'text-indigo-300' : ''}`}>{fpr}</td>
+                              <td className={`py-2.5 px-3 ${isFullModel ? 'text-purple-300' : ''}`}>{roc}</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="bg-black/30 p-6 rounded-xl border border-white/5 text-center text-xs font-mono text-slate-400">
+                    Ablation study metrics unavailable. Connect to backend or generate benchmark artifacts.
+                  </div>
+                )}
+                {metricsData?.ablation_comparison && Object.keys(metricsData.ablation_comparison).length > 0 && (
+                  <div className="p-3 rounded-lg bg-black/30 border border-white/5 text-[11px] text-slate-400 space-y-1">
+                    <div className="font-bold text-slate-200">Ablation Takeaway:</div>
+                    Early packet length bursts (SPLT sequence) and TLS handshake fingerprints significantly reduce missed attacks over flow-only features.
+                  </div>
+                )}
               </div>
             )}
 
@@ -693,24 +732,29 @@ export default function EncryptedLab() {
             {activeTab === 'families' && (
               <div className="space-y-4">
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Evaluation on 12 unobserved zero-day malware families present exclusively in the test split (never in training):
+                  Evaluation on {zeroDayFamiliesCount !== null ? `${zeroDayFamiliesCount} unobserved zero-day malware families` : 'unobserved zero-day malware families'} present exclusively in the test split (never in training):
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                  {slice?.family_breakdown &&
-                    Object.entries(slice.family_breakdown).map(([family, fInfo]) => (
+                {slice?.family_breakdown && Object.keys(slice.family_breakdown).length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    {Object.entries(slice.family_breakdown).map(([family, fInfo]) => (
                       <div key={family} className="bg-black/30 p-2.5 rounded-lg border border-white/5 space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-white truncate">{family}</span>
                           <span className="text-[10px] font-mono text-emerald-400 font-bold">
-                            {fInfo.recall ? `${(fInfo.recall * 100).toFixed(1)}%` : '100%'}
+                            {fInfo.recall !== undefined && fInfo.recall !== null ? `${(fInfo.recall * 100).toFixed(1)}%` : '—'}
                           </span>
                         </div>
                         <div className="text-[10px] font-mono text-slate-500">
-                          {fInfo.detected || 0} / {fInfo.total || 0} caught
+                          {fInfo.detected !== undefined && fInfo.total !== undefined ? `${fInfo.detected} / ${fInfo.total} caught` : '—'}
                         </div>
                       </div>
                     ))}
-                </div>
+                  </div>
+                ) : (
+                  <div className="bg-black/30 p-6 rounded-xl border border-white/5 text-center text-xs font-mono text-slate-400">
+                    Per-family breakdown unavailable in current slice evaluation.
+                  </div>
+                )}
               </div>
             )}
           </div>

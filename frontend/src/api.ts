@@ -469,11 +469,15 @@ export type EncryptedMetricsResponse = {
   ablation_comparison?: Record<string, {
     description?: string
     features?: number
+    features_count?: number
+    training_time_sec?: number
     accuracy?: number
     recall?: number
     precision?: number
     fpr?: number
+    benign_fpr?: number
     roc_auc?: number
+    pr_auc?: number
     f1?: number
   }>
   primary_evaluation?: {

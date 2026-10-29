@@ -301,6 +301,18 @@ def train_encrypted_pipeline(
 
     metrics_path.write_text(json.dumps(metrics_payload, indent=2), encoding="utf-8")
     print(f"  * Verification Metrics: {metrics_path.relative_to(ROOT)}")
+
+    # Persist deterministic test sample ID manifest alongside future benchmark outputs
+    manifest_path = MODELS_DIR / "encrypted_test_sample_ids.json"
+    manifest_payload: dict[str, Any] = {
+        "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "description": "Deterministic test sample IDs used for Problem 2 holdout evaluation",
+        "sample_count": int(df_test["meta.sample.id"].nunique()),
+        "flow_count": len(df_test),
+        "test_sample_ids": sorted(list(df_test["meta.sample.id"].unique())),
+    }
+    manifest_path.write_text(json.dumps(manifest_payload, indent=2), encoding="utf-8")
+    print(f"  * Test Sample Manifest: {manifest_path.relative_to(ROOT)}")
     print("\n" + "=" * 78)
     print("  Phase 1 Complete: Model Trained, Evaluated, and Verified Successfully.")
     print("=" * 78)

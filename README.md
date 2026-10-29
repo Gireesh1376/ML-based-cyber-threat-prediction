@@ -8,7 +8,9 @@ Full-stack SOC dashboard for the academic project **ML-Based Cyber Threat Predic
 - **Backend:** FastAPI with modular routers for `/api/detect`, `/api/encrypted`, `/api/priority`, and `/api/adversarial`.
 - **Detectors:**
   - *Problem 1 (Zero-Day):* StandardScaler + One-Hot features → XGBoost feature selection → PyTorch MLP autoencoder on benign traffic → XGBoost known-family classifier → novel-threat gate from reconstruction error.
-  - *Problem 2 (Encrypted TLS):* Leakage-resistant feature transformer (71 observable features: JA4 fingerprint prefix, cipher suites, SNI entropy, and SPLT packet size/direction sequences) → XGBoost classifier (300 estimators) without decrypting payloads. Evaluated on 18,874 holdout TLS connections (ROC-AUC 0.9996, PR-AUC 0.9996, F1 0.9938).
+  - *Problem 2 (Encrypted TLS):* Leakage-resistant feature transformer (71 observable features: JA4 fingerprint prefix, cipher suites, SNI entropy, and SPLT packet size/direction sequences) → XGBoost classifier (300 estimators) without decrypting payloads. Evaluated across two documented holdout populations:
+    1. *Historical Benchmark:* 50,377 holdout TLS connections across 2,473 execution groups (F1 0.9733, Recall 0.9823, ROC-AUC 0.9983, PR-AUC 0.9970). Because the original 2,473 execution sample IDs were not saved to disk, this historical draw cannot be reproduced bit-for-bit.
+    2. *Reproducible Full Holdout Benchmark:* Complete chronological test split of 234,037 connections across 9,948 execution groups (F1 0.9837, Recall 0.9876, Precision 0.9799, ROC-AUC 0.9988, PR-AUC 0.9984). Evaluated with 100% bit-for-bit reproducibility via `py -3.14 backend/scripts/reproduce_encrypted_benchmark.py --verify`.
   - *Problem 3 (Prioritisation):* Class-aware composite score ($w_a \cdot S_a + w_c \cdot C_{asset} + w_u \cdot U + w_v \cdot V - w_h \cdot H$) sorting alerts into Critical, Review, and Auto-logged tiers.
   - *Problem 4 (Adversarial Robustness):* Adversarially hardened model artifact trained against gradient-based (FGSM, PGD) and distribution (UAP, DEMGAN) perturbations under physical flow constraints.
 - **Datasets:** NSL-KDD benchmark for Problem 1, 3, and 4; Stratosphere/Malware TLS Parquet benchmark for Problem 2.
@@ -147,7 +149,7 @@ Aegis implements network-protocol-constrained adversarial sample synthesis (**Co
 - **Explanations.** `top_features` are SHAP values for the XGBoost reading. `anomaly_features` give each feature's share of the autoencoder reconstruction error, which is the relevant justification for a `zero_day` alert.
 - **Baselines** (Decision Tree, Logistic Regression, linear SVM, Random Forest, XGBoost) are reported above, as the proposal requires.
 - **Problem 4 Hardening:** Retrained XGBoost on domain-constrained adversarial variants, reducing evasion by 45.9% without increasing false alarms.
-- **Datasets / storage.** Only NSL-KDD is used (no CICIDS2017/18). Alerts are replayed from `demo_alerts.json`; Elasticsearch, real-time capture (Scapy/PyShark) and Kafka are future work.
+- **Datasets / storage.** NSL-KDD benchmark for Problems 1, 3, and 4; Stratosphere/Triage Malware TLS benchmark for Problem 2. Alerts persist to Elasticsearch (when available) with automatic graceful fallback to `demo_alerts.json`; live streaming from Kafka is out of scope.
 - **Base rate.** The NSL-KDD test split is 56.9% attacks, so alerts-per-1000-flows figures do not transfer to a real network.
 
 ## Known limitations (stated honestly)
@@ -158,7 +160,7 @@ Aegis implements network-protocol-constrained adversarial sample synthesis (**Co
 - Detection is strongest for DoS (95%) and probe (96%) attacks. R2L attacks are detected 45% of the time and U2R 66%, which is where most of the 14.6% auto-logged attacks come from.
 - **Zero-day precision is modest** (see table): treat `zero_day` as a screening signal.
 - **Adversarial evasion is a mitigation, not an absolute fix.** Retraining defends against perturbation spaces the model has been exposed to. Adversarial robustness is an ongoing arms race, and no intrusion detection model in published literature achieves 100% permanent evasion immunity.
-- **Problem 2 (encrypted traffic analysis) is planned for future milestones.**
+- **Problem 2 (Encrypted TLS Threat Detection):** Implemented using a leakage-resistant 71-feature pipeline (JA4, cipher suites, SNI entropy, and SPLT packet dynamics) with an XGBoost classifier without payload decryption. Operates in offline flow record ingestion and calibrated preset mode; live NIC packet capture is disconnected and arbitrary raw PCAP decryption is intentionally restricted (HTTP 501) under NIST SP 1800-37 zero-trust privacy guidelines.
 
 ## Full reproduction order
 
@@ -169,6 +171,12 @@ python -m app.ml.train             # 2. train + write metrics.json / demo_alerts
 python -m app.ml.evaluate          # 3. detection comparison, tiers, safety audit, per-family results
 python -m app.ml.baselines         # 4. DT / LR / SVM / RF / XGBoost comparison
 python -m pytest tests -q
+
+# Problem 2 Encrypted TLS Benchmark (100% bit-for-bit verification of 234,037 holdout flows against manifest):
+py -3.14 backend/scripts/reproduce_encrypted_benchmark.py --verify
+
+# Problem 4 Adversarial Benchmark (verifies FGSM, PGD, UAP, DEMGAN against adversarial_metrics.json):
+py -3.14 backend/scripts/reproduce_adversarial_benchmark.py
 ```
 
 ## Run locally
