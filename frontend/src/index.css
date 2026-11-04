@@ -410,12 +410,31 @@ html.light [class*="bg-black/"] span {
 }
 
 /* Progress Bar Tracks in Light Mode - Clean Slate-200 Track so Meters are Visible */
-html.light [class*="h-1"][class*="rounded-full"],
-html.light [class*="h-1.5"][class*="rounded-full"],
-html.light [class*="h-2"][class*="rounded-full"],
-html.light [class*="h-2.5"][class*="rounded-full"] {
+/* Scoped strictly to progress tracks with overflow-hidden to prevent colliding with circular status indicator dots */
+html.light [class*="overflow-hidden"][class*="rounded-full"][class*="h-1"],
+html.light [class*="overflow-hidden"][class*="rounded-full"][class*="h-1.5"],
+html.light [class*="overflow-hidden"][class*="rounded-full"][class*="h-2"],
+html.light [class*="overflow-hidden"][class*="rounded-full"][class*="h-2.5"] {
   background-color: #e2e8f0 !important;
   border: none !important;
+}
+
+/* Ensure Status Indicator Dots and Solid Accents are Crisp & Vibrant in Light Mode */
+html.light .bg-emerald-400,
+html.light .bg-emerald-500 {
+  background-color: #10b981 !important;
+}
+html.light .bg-cyan-400,
+html.light .bg-cyan-500 {
+  background-color: #06b6d4 !important;
+}
+html.light .bg-amber-400,
+html.light .bg-amber-500 {
+  background-color: #f59e0b !important;
+}
+html.light .bg-rose-400,
+html.light .bg-rose-500 {
+  background-color: #f43f5e !important;
 }
 
 /* Active Segmented Buttons / Tabs (e.g. in ZeroDayLab categories) */

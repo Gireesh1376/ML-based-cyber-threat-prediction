@@ -356,26 +356,26 @@ export default function App() {
                   ? `ES: ${dbStatus.docs_count != null ? `${dbStatus.docs_count} Alerts` : '—'}`
                   : 'DB: Fallback'}
               </span>
-              <span className={`w-1.5 h-1.5 rounded-full ${dbStatus?.connected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+              <span className={`w-1.5 h-1.5 rounded-full ${dbStatus?.connected ? 'bg-emerald-500 dark:bg-emerald-400 animate-pulse' : 'bg-amber-500 dark:bg-amber-400'}`} />
             </button>
 
             <div className="flex items-center gap-2 pl-1" title={`Backend API: ${apiHealth}`}>
               <div
                 className={`h-2 w-2 rounded-full ${
                   apiHealth === 'connected'
-                    ? 'bg-emerald-400 animate-pulse'
+                    ? 'bg-emerald-500 dark:bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]'
                     : apiHealth === 'offline'
-                    ? 'bg-rose-500'
-                    : 'bg-amber-400 animate-pulse'
+                    ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'
+                    : 'bg-amber-500 dark:bg-amber-400 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)]'
                 }`}
               />
               <span
                 className={`text-xs font-mono ${
                   apiHealth === 'connected'
-                    ? 'text-slate-400'
+                    ? 'text-slate-600 dark:text-slate-400 font-medium'
                     : apiHealth === 'offline'
-                    ? 'text-rose-400 font-semibold'
-                    : 'text-amber-400'
+                    ? 'text-rose-600 dark:text-rose-400 font-semibold'
+                    : 'text-amber-600 dark:text-amber-400'
                 }`}
               >
                 {apiHealth === 'connected' ? 'FastAPI Online' : apiHealth === 'offline' ? 'FastAPI Offline' : 'Connecting...'}
