@@ -1,0 +1,88 @@
+{
+  "benchmark_id": "aegis-problem2-holdout-reproducible-d48bfa1c",
+  "problem": "Problem 2: Encrypted TLS Traffic Threat Detection",
+  "dataset_name": "Triage Malware Sandbox TLS Traffic Collection (Sept 2025)",
+  "model_architecture": "XGBoost Classifier with SPLT Packet Dynamics & TLS Handshake Features",
+  "timestamp_utc": "2026-10-29T20:15:14Z",
+  "provenance": {
+    "model_joblib_sha256": "e5826a50f87a8269697aa6fe4d555b043835d453c76006236e8e0a25398b07ce",
+    "model_xgb_sha256": "d48bfa1c572f1afac19f50b060927bc73e3b96a744fdd70b2f9341ebf54f38e2",
+    "manifest_file": "encrypted_benchmark_reproducible_manifest.json",
+    "manifest_sha256": "611e0efb547d8a35205c4420cfdf2216fb208c7083cb040d35d9dc45a74ce482",
+    "evaluation_mode": "full_chronological_holdout",
+    "date_cutoff": 250922
+  },
+  "timing": {
+    "load_time_sec": 11.76,
+    "transform_time_sec": 0.59,
+    "scoring_time_sec": 0.67
+  },
+  "population": {
+    "flow_count": 234037,
+    "sample_count": 9948,
+    "malicious_count": 107481,
+    "benign_count": 126556,
+    "dates": "250923 to 250930"
+  },
+  "primary_evaluation": {
+    "threshold": 0.5,
+    "accuracy": 0.985,
+    "precision": 0.9799,
+    "recall": 0.9876,
+    "f1": 0.9837,
+    "benign_fpr": 0.0172,
+    "roc_auc": 0.9988,
+    "pr_auc": 0.9984,
+    "true_negatives": 124376,
+    "false_positives": 2180,
+    "false_negatives": 1328,
+    "true_positives": 106153,
+    "confusion_matrix": [
+      [
+        124376,
+        2180
+      ],
+      [
+        1328,
+        106153
+      ]
+    ]
+  },
+  "subgroups": {
+    "clean_control": {
+      "flow_count": 14334,
+      "false_positives": 1852,
+      "fpr": 0.1292
+    },
+    "malware_vm_services": {
+      "flow_count": 112222,
+      "false_positives": 328,
+      "fpr": 0.0029
+    },
+    "combined": {
+      "flow_count": 126556,
+      "false_positives": 2180,
+      "fpr": 0.0172
+    }
+  },
+  "zero_day_evaluation": {
+    "families_count": 12,
+    "families": [
+      "44caliber",
+      "bdaejec",
+      "cerber",
+      "fickerstealer",
+      "gandcrab",
+      "hawkeye",
+      "marsstealer",
+      "meshagent",
+      "neptunerat",
+      "oski",
+      "petya",
+      "wshrat"
+    ],
+    "flow_count": 1930,
+    "detected_count": 1872,
+    "recall": 0.9699
+  }
+}

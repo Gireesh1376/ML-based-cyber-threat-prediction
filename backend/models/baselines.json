@@ -1,0 +1,79 @@
+{
+  "dataset": "NSL-KDD official test split",
+  "test_rows": 22544,
+  "true_attacks": 12833,
+  "held_out_zero_day_rows": 3568,
+  "setup": "Trained on known families only, same 85/15 split (seed 42) as the hybrid; all one-hot+scaled features; binary normal-vs-attack.",
+  "baselines": {
+    "decision_tree": {
+      "precision": 0.9671769890976571,
+      "recall": 0.6498090859502844,
+      "f1": 0.7773479375436961,
+      "false_positive_rate": 0.02914220986510143,
+      "missed_attacks": 4494,
+      "held_out_zero_day_detection_rate": 0.3727578475336323,
+      "recall_by_family": {
+        "dos": 0.796916890080429,
+        "probe": 0.8323007021891781,
+        "r2l": 0.12547660311958406,
+        "u2r": 0.2537313432835821
+      }
+    },
+    "logistic_regression": {
+      "precision": 0.9171908955736018,
+      "recall": 0.6248733733343723,
+      "f1": 0.7433259176863182,
+      "false_positive_rate": 0.07455462877149624,
+      "missed_attacks": 4814,
+      "held_out_zero_day_detection_rate": 0.4335762331838565,
+      "recall_by_family": {
+        "dos": 0.8195710455764075,
+        "probe": 0.7678645187938868,
+        "r2l": 0.010398613518197574,
+        "u2r": 0.23880597014925373
+      }
+    },
+    "linear_svm": {
+      "precision": 0.9154338963308095,
+      "recall": 0.6124055170264163,
+      "f1": 0.733868708562891,
+      "false_positive_rate": 0.07476058078467716,
+      "missed_attacks": 4974,
+      "held_out_zero_day_detection_rate": 0.3926569506726457,
+      "recall_by_family": {
+        "dos": 0.8201072386058981,
+        "probe": 0.7059066501445683,
+        "r2l": 0.006239168110918544,
+        "u2r": 0.208955223880597
+      }
+    },
+    "random_forest": {
+      "precision": 0.9678803481672184,
+      "recall": 0.6152107846957063,
+      "f1": 0.7522629823725584,
+      "false_positive_rate": 0.026979713726701677,
+      "missed_attacks": 4938,
+      "held_out_zero_day_detection_rate": 0.26681614349775784,
+      "recall_by_family": {
+        "dos": 0.7998659517426273,
+        "probe": 0.7406030565881867,
+        "r2l": 0.04367417677642981,
+        "u2r": 0.13432835820895522
+      }
+    },
+    "xgboost_binary": {
+      "precision": 0.9684994272623139,
+      "recall": 0.6588482817735526,
+      "f1": 0.7842136993924779,
+      "false_positive_rate": 0.028318401812377717,
+      "missed_attacks": 4378,
+      "held_out_zero_day_detection_rate": 0.40274663677130046,
+      "recall_by_family": {
+        "dos": 0.8741286863270777,
+        "probe": 0.7203634861627427,
+        "r2l": 0.06239168110918544,
+        "u2r": 0.14925373134328357
+      }
+    }
+  }
+}

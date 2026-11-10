@@ -1,0 +1,1322 @@
+{
+  "dataset": "NSL-KDD",
+  "problem": "Zero-day / unknown attack detection",
+  "architecture": "Autoencoder + XGBoost hybrid (Dai et al. 2024 style)",
+  "train_rows": 125973,
+  "validation_rows": 18896,
+  "test_rows": 22544,
+  "unseen_zero_day_rows": 3568,
+  "held_out_labels": [
+    "apache2",
+    "httptunnel",
+    "mailbomb",
+    "mscan",
+    "named",
+    "processtable",
+    "ps",
+    "saint",
+    "sendmail",
+    "snmpguess",
+    "sqlattack",
+    "udpstorm",
+    "worm",
+    "xlock",
+    "xterm"
+  ],
+  "selected_feature_count": 48,
+  "reconstruction_threshold": 0.24714649658964788,
+  "classes": [
+    "dos",
+    "normal",
+    "probe",
+    "r2l",
+    "u2r"
+  ],
+  "validation_binary": {
+    "accuracy": 0.9786198137171889,
+    "precision": 0.9566779144443235,
+    "recall": 0.9993177942012507,
+    "f1": 0.9775330886441997,
+    "roc_auc": 0.98051591940165,
+    "confusion_matrix": [
+      [
+        9703,
+        398
+      ],
+      [
+        6,
+        8789
+      ]
+    ]
+  },
+  "validation_multiclass": {
+    "accuracy": 0.9991003386960203,
+    "macro_f1": 0.954437984530801,
+    "weighted_f1": 0.9991122960806641
+  },
+  "official_test_binary": {
+    "accuracy": 0.8744677075940384,
+    "precision": 0.931498576481753,
+    "recall": 0.8413465284812592,
+    "f1": 0.8841303635768097,
+    "roc_auc": 0.9528367843615902,
+    "confusion_matrix": [
+      [
+        8917,
+        794
+      ],
+      [
+        2036,
+        10797
+      ]
+    ]
+  },
+  "prioritisation": {
+    "weights": {
+      "confidence": 0.35,
+      "reconstruction": 0.25,
+      "family": 0.15,
+      "asset": 0.15,
+      "zero_day_bonus": 0.1
+    },
+    "weight_sum": 1.0,
+    "family_severity": {
+      "dos": 1.0,
+      "zero_day": 1.0,
+      "u2r": 0.95,
+      "r2l": 0.8,
+      "probe": 0.7,
+      "normal": 0.0
+    },
+    "asset_criticality_scale": "SERVICE_CRITICALITY map (65 NSL-KDD services), continuous [0,1], unknown -> review-floor fallback",
+    "recon_ratio_cap": 20.0,
+    "tier_cutoffs": {
+      "critical": 0.5901,
+      "review": 0.1364
+    },
+    "cutoffs_derived_on": "validation_split_true_labels",
+    "cutoff_meaning": {
+      "critical": "85% of TRUE validation attacks land critical",
+      "review": "95% of TRUE validation benign flows stay below (auto-log)"
+    },
+    "test_evaluation": {
+      "attacks_in_critical": 0.7431621600561054,
+      "attacks_in_human_tiers": 0.8542819294007636,
+      "zero_days_in_critical": 0.702354260089686,
+      "zero_days_in_human_tiers": 0.781670403587444,
+      "human_review_workload": 0.5233321504613201,
+      "auto_logged_share": 0.4766678495386799,
+      "attacks_auto_logged": 1870,
+      "attacks_outside_human_tiers": 0.14571807059923633,
+      "zero_days_outside_human_tiers": 0.21832959641255606,
+      "auto_logged_true_attack_count": 1870,
+      "tier_counts": {
+        "critical": 10177,
+        "review": 1621,
+        "auto_log": 10746
+      },
+      "queue_budget": 11798,
+      "fixed_queue": {
+        "@50": {
+          "composite": {
+            "k": 50,
+            "precision_at_k": 0.82,
+            "recall_at_k": 0.003194888178913738,
+            "zero_day_capture_at_k": 0.0005605381165919282,
+            "false_negatives_outside_queue": 12792
+          },
+          "confidence_only": {
+            "k": 50,
+            "precision_at_k": 0.0,
+            "recall_at_k": 0.0,
+            "zero_day_capture_at_k": 0.0,
+            "false_negatives_outside_queue": 12833
+          },
+          "class_aware_confidence_only": {
+            "k": 50,
+            "precision_at_k": 1.0,
+            "recall_at_k": 0.0038962050962362657,
+            "zero_day_capture_at_k": 0.0,
+            "false_negatives_outside_queue": 12783
+          }
+        },
+        "@100": {
+          "composite": {
+            "k": 100,
+            "precision_at_k": 0.9,
+            "recall_at_k": 0.007013169173225278,
+            "zero_day_capture_at_k": 0.0005605381165919282,
+            "false_negatives_outside_queue": 12743
+          },
+          "confidence_only": {
+            "k": 100,
+            "precision_at_k": 0.0,
+            "recall_at_k": 0.0,
+            "zero_day_capture_at_k": 0.0,
+            "false_negatives_outside_queue": 12833
+          },
+          "class_aware_confidence_only": {
+            "k": 100,
+            "precision_at_k": 1.0,
+            "recall_at_k": 0.0077924101924725315,
+            "zero_day_capture_at_k": 0.0,
+            "false_negatives_outside_queue": 12733
+          }
+        },
+        "@200": {
+          "composite": {
+            "k": 200,
+            "precision_at_k": 0.905,
+            "recall_at_k": 0.014104262448375282,
+            "zero_day_capture_at_k": 0.00616591928251121,
+            "false_negatives_outside_queue": 12652
+          },
+          "confidence_only": {
+            "k": 200,
+            "precision_at_k": 0.0,
+            "recall_at_k": 0.0,
+            "zero_day_capture_at_k": 0.0,
+            "false_negatives_outside_queue": 12833
+          },
+          "class_aware_confidence_only": {
+            "k": 200,
+            "precision_at_k": 1.0,
+            "recall_at_k": 0.015584820384945063,
+            "zero_day_capture_at_k": 0.0,
+            "false_negatives_outside_queue": 12633
+          }
+        },
+        "@500": {
+          "composite": {
+            "k": 500,
+            "precision_at_k": 0.958,
+            "recall_at_k": 0.03732564482194343,
+            "zero_day_capture_at_k": 0.007006726457399103,
+            "false_negatives_outside_queue": 12354
+          },
+          "confidence_only": {
+            "k": 500,
+            "precision_at_k": 0.0,
+            "recall_at_k": 0.0,
+            "zero_day_capture_at_k": 0.0,
+            "false_negatives_outside_queue": 12833
+          },
+          "class_aware_confidence_only": {
+            "k": 500,
+            "precision_at_k": 1.0,
+            "recall_at_k": 0.03896205096236266,
+            "zero_day_capture_at_k": 0.0,
+            "false_negatives_outside_queue": 12333
+          }
+        },
+        "@1000": {
+          "composite": {
+            "k": 1000,
+            "precision_at_k": 0.95,
+            "recall_at_k": 0.07402789682848905,
+            "zero_day_capture_at_k": 0.08267937219730942,
+            "false_negatives_outside_queue": 11883
+          },
+          "confidence_only": {
+            "k": 1000,
+            "precision_at_k": 0.0,
+            "recall_at_k": 0.0,
+            "zero_day_capture_at_k": 0.0,
+            "false_negatives_outside_queue": 12833
+          },
+          "class_aware_confidence_only": {
+            "k": 1000,
+            "precision_at_k": 1.0,
+            "recall_at_k": 0.07792410192472532,
+            "zero_day_capture_at_k": 0.0,
+            "false_negatives_outside_queue": 11833
+          }
+        },
+        "@2000": {
+          "composite": {
+            "k": 2000,
+            "precision_at_k": 0.929,
+            "recall_at_k": 0.14478298137613965,
+            "zero_day_capture_at_k": 0.23850896860986548,
+            "false_negatives_outside_queue": 10975
+          },
+          "confidence_only": {
+            "k": 2000,
+            "precision_at_k": 0.0025,
+            "recall_at_k": 0.0003896205096236266,
+            "zero_day_capture_at_k": 0.0,
+            "false_negatives_outside_queue": 12828
+          },
+          "class_aware_confidence_only": {
+            "k": 2000,
+            "precision_at_k": 1.0,
+            "recall_at_k": 0.15584820384945064,
+            "zero_day_capture_at_k": 0.0,
+            "false_negatives_outside_queue": 10833
+          }
+        }
+      },
+      "ablation_at_review_queue_size": {
+        "conf_only": {
+          "k": 11798,
+          "precision_at_k": 0.931259535514494,
+          "recall_at_k": 0.8561521078469571,
+          "zero_day_capture_at_k": 0.7752242152466368,
+          "false_negatives_outside_queue": 1846
+        },
+        "conf_recon": {
+          "k": 11798,
+          "precision_at_k": 0.9313442956433293,
+          "recall_at_k": 0.8562300319488818,
+          "zero_day_capture_at_k": 0.7763452914798207,
+          "false_negatives_outside_queue": 1845
+        },
+        "conf_recon_family": {
+          "k": 11798,
+          "precision_at_k": 0.9313442956433293,
+          "recall_at_k": 0.8562300319488818,
+          "zero_day_capture_at_k": 0.7763452914798207,
+          "false_negatives_outside_queue": 1845
+        },
+        "conf_recon_family_asset": {
+          "k": 11798,
+          "precision_at_k": 0.9315985760298355,
+          "recall_at_k": 0.856463804254656,
+          "zero_day_capture_at_k": 0.7802690582959642,
+          "false_negatives_outside_queue": 1842
+        },
+        "full": {
+          "k": 11798,
+          "precision_at_k": 0.9315985760298355,
+          "recall_at_k": 0.856463804254656,
+          "zero_day_capture_at_k": 0.7802690582959642,
+          "false_negatives_outside_queue": 1842
+        },
+        "full_without_zero_day_bonus": {
+          "k": 11798,
+          "precision_at_k": 0.9315985760298355,
+          "recall_at_k": 0.856463804254656,
+          "zero_day_capture_at_k": 0.7802690582959642,
+          "false_negatives_outside_queue": 1842
+        }
+      },
+      "confidence_baseline_matched": {
+        "k": 11798,
+        "precision_at_k": 0.931259535514494,
+        "recall_at_k": 0.8561521078469571,
+        "zero_day_capture_at_k": 0.7752242152466368,
+        "false_negatives_outside_queue": 1846
+      },
+      "composite_matched": {
+        "k": 11798,
+        "precision_at_k": 0.9315985760298355,
+        "recall_at_k": 0.856463804254656,
+        "zero_day_capture_at_k": 0.7802690582959642,
+        "false_negatives_outside_queue": 1842
+      }
+    }
+  },
+  "zero_day": {
+    "held_out_attack_detection_rate": 0.7637331838565022,
+    "flagged_as_novel_rate": 0.4941143497757848,
+    "examples": [
+      {
+        "label": "saint",
+        "family": "probe",
+        "predicted": "probe",
+        "confidence": 0.9983294606208801,
+        "reconstruction_error": 0.1573646675069665
+      },
+      {
+        "label": "mscan",
+        "family": "probe",
+        "predicted": "zero_day",
+        "confidence": 0.8599743843078613,
+        "reconstruction_error": 0.4588777913173077
+      },
+      {
+        "label": "mscan",
+        "family": "probe",
+        "predicted": "normal",
+        "confidence": 0.9996148347854614,
+        "reconstruction_error": 0.2258367031103238
+      },
+      {
+        "label": "mscan",
+        "family": "probe",
+        "predicted": "dos",
+        "confidence": 0.9982353448867798,
+        "reconstruction_error": 0.6932230336752415
+      },
+      {
+        "label": "apache2",
+        "family": "dos",
+        "predicted": "dos",
+        "confidence": 0.9213441610336304,
+        "reconstruction_error": 1.2956304399932332
+      },
+      {
+        "label": "mscan",
+        "family": "probe",
+        "predicted": "zero_day",
+        "confidence": 0.966032087802887,
+        "reconstruction_error": 1.0143785781441672
+      },
+      {
+        "label": "mscan",
+        "family": "probe",
+        "predicted": "dos",
+        "confidence": 0.9990071654319763,
+        "reconstruction_error": 0.6477535145711929
+      },
+      {
+        "label": "processtable",
+        "family": "dos",
+        "predicted": "zero_day",
+        "confidence": 0.9986777901649475,
+        "reconstruction_error": 0.35011618386483495
+      },
+      {
+        "label": "mscan",
+        "family": "probe",
+        "predicted": "zero_day",
+        "confidence": 0.6442055702209473,
+        "reconstruction_error": 0.7586553502250322
+      },
+      {
+        "label": "processtable",
+        "family": "dos",
+        "predicted": "zero_day",
+        "confidence": 0.9983363747596741,
+        "reconstruction_error": 0.26101835576612087
+      },
+      {
+        "label": "mscan",
+        "family": "probe",
+        "predicted": "zero_day",
+        "confidence": 0.7663252949714661,
+        "reconstruction_error": 1.0829951737235233
+      },
+      {
+        "label": "httptunnel",
+        "family": "r2l",
+        "predicted": "zero_day",
+        "confidence": 0.9986953139305115,
+        "reconstruction_error": 0.26291659173752085
+      },
+      {
+        "label": "ps",
+        "family": "u2r",
+        "predicted": "zero_day",
+        "confidence": 0.8646249175071716,
+        "reconstruction_error": 0.2772391900093584
+      },
+      {
+        "label": "processtable",
+        "family": "dos",
+        "predicted": "zero_day",
+        "confidence": 0.9983363747596741,
+        "reconstruction_error": 0.26123493533055725
+      },
+      {
+        "label": "processtable",
+        "family": "dos",
+        "predicted": "zero_day",
+        "confidence": 0.9961530566215515,
+        "reconstruction_error": 0.2591732426210578
+      },
+      {
+        "label": "snmpguess",
+        "family": "r2l",
+        "predicted": "normal",
+        "confidence": 0.9986441731452942,
+        "reconstruction_error": 0.03272115966405545
+      },
+      {
+        "label": "processtable",
+        "family": "dos",
+        "predicted": "zero_day",
+        "confidence": 0.9973117113113403,
+        "reconstruction_error": 0.5286598675958586
+      },
+      {
+        "label": "processtable",
+        "family": "dos",
+        "predicted": "zero_day",
+        "confidence": 0.5401401519775391,
+        "reconstruction_error": 0.38116289554745775
+      },
+      {
+        "label": "snmpguess",
+        "family": "r2l",
+        "predicted": "normal",
+        "confidence": 0.9992558360099792,
+        "reconstruction_error": 0.033018249795660336
+      },
+      {
+        "label": "mscan",
+        "family": "probe",
+        "predicted": "zero_day",
+        "confidence": 0.8630098700523376,
+        "reconstruction_error": 0.6288516039459671
+      },
+      {
+        "label": "apache2",
+        "family": "dos",
+        "predicted": "zero_day",
+        "confidence": 0.5091193914413452,
+        "reconstruction_error": 1.3004120499968674
+      },
+      {
+        "label": "mscan",
+        "family": "probe",
+        "predicted": "dos",
+        "confidence": 0.9991151690483093,
+        "reconstruction_error": 0.638599074415362
+      },
+      {
+        "label": "processtable",
+        "family": "dos",
+        "predicted": "zero_day",
+        "confidence": 0.7551655769348145,
+        "reconstruction_error": 0.36650891883740694
+      },
+      {
+        "label": "mailbomb",
+        "family": "dos",
+        "predicted": "normal",
+        "confidence": 0.9951950907707214,
+        "reconstruction_error": 0.0204627916202479
+      },
+      {
+        "label": "processtable",
+        "family": "dos",
+        "predicted": "zero_day",
+        "confidence": 0.8773590326309204,
+        "reconstruction_error": 0.6833267661985664
+      },
+      {
+        "label": "processtable",
+        "family": "dos",
+        "predicted": "zero_day",
+        "confidence": 0.9989211559295654,
+        "reconstruction_error": 0.3251155582787298
+      },
+      {
+        "label": "apache2",
+        "family": "dos",
+        "predicted": "zero_day",
+        "confidence": 0.5091193914413452,
+        "reconstruction_error": 1.3001757921332215
+      },
+      {
+        "label": "saint",
+        "family": "probe",
+        "predicted": "probe",
+        "confidence": 0.9999693632125854,
+        "reconstruction_error": 1.921825874939674
+      },
+      {
+        "label": "processtable",
+        "family": "dos",
+        "predicted": "zero_day",
+        "confidence": 0.9989211559295654,
+        "reconstruction_error": 0.3276564484514934
+      },
+      {
+        "label": "mscan",
+        "family": "probe",
+        "predicted": "zero_day",
+        "confidence": 0.9883231520652771,
+        "reconstruction_error": 0.4712744537659282
+      },
+      {
+        "label": "apache2",
+        "family": "dos",
+        "predicted": "dos",
+        "confidence": 0.9935957789421082,
+        "reconstruction_error": 0.45837116214619417
+      },
+      {
+        "label": "processtable",
+        "family": "dos",
+        "predicted": "zero_day",
+        "confidence": 0.5590331554412842,
+        "reconstruction_error": 0.6867525937985874
+      },
+      {
+        "label": "apache2",
+        "family": "dos",
+        "predicted": "zero_day",
+        "confidence": 0.7145805358886719,
+        "reconstruction_error": 1.2824118727479858
+      },
+      {
+        "label": "snmpguess",
+        "family": "r2l",
+        "predicted": "normal",
+        "confidence": 0.9995170831680298,
+        "reconstruction_error": 0.032653395662757136
+      },
+      {
+        "label": "mscan",
+        "family": "probe",
+        "predicted": "normal",
+        "confidence": 0.9928448796272278,
+        "reconstruction_error": 0.24442147382858595
+      },
+      {
+        "label": "apache2",
+        "family": "dos",
+        "predicted": "normal",
+        "confidence": 0.9992161989212036,
+        "reconstruction_error": 0.13252428331780183
+      },
+      {
+        "label": "apache2",
+        "family": "dos",
+        "predicted": "dos",
+        "confidence": 0.9850539565086365,
+        "reconstruction_error": 1.2758028642267911
+      },
+      {
+        "label": "mscan",
+        "family": "probe",
+        "predicted": "zero_day",
+        "confidence": 0.999614953994751,
+        "reconstruction_error": 0.2610042518783557
+      },
+      {
+        "label": "apache2",
+        "family": "dos",
+        "predicted": "normal",
+        "confidence": 0.9870730638504028,
+        "reconstruction_error": 0.24017348799472873
+      },
+      {
+        "label": "mscan",
+        "family": "probe",
+        "predicted": "dos",
+        "confidence": 0.9972341656684875,
+        "reconstruction_error": 0.756768922778444
+      }
+    ]
+  },
+  "feature_names": [
+    "duration",
+    "src_bytes",
+    "dst_bytes",
+    "land",
+    "wrong_fragment",
+    "hot",
+    "num_failed_logins",
+    "logged_in",
+    "num_compromised",
+    "root_shell",
+    "su_attempted",
+    "num_file_creations",
+    "is_guest_login",
+    "count",
+    "srv_count",
+    "serror_rate",
+    "srv_serror_rate",
+    "rerror_rate",
+    "same_srv_rate",
+    "diff_srv_rate",
+    "dst_host_srv_count",
+    "dst_host_same_srv_rate",
+    "dst_host_diff_srv_rate",
+    "dst_host_same_src_port_rate",
+    "dst_host_srv_diff_host_rate",
+    "dst_host_serror_rate",
+    "dst_host_srv_serror_rate",
+    "dst_host_rerror_rate",
+    "protocol_type_icmp",
+    "protocol_type_tcp",
+    "service_IRC",
+    "service_domain_u",
+    "service_eco_i",
+    "service_ecr_i",
+    "service_finger",
+    "service_ftp_data",
+    "service_http",
+    "service_pm_dump",
+    "service_private",
+    "service_smtp",
+    "service_telnet",
+    "service_time",
+    "flag_RSTOS0",
+    "flag_RSTR",
+    "flag_S0",
+    "flag_S1",
+    "flag_SF",
+    "flag_SH"
+  ],
+  "novelty_settings": {
+    "recon_quantile": 0.96,
+    "novelty_gate": 0.9,
+    "source": "validation_leave_family_out (models/novelty_tuning.json)"
+  },
+  "detection_comparison": {
+    "detectors": {
+      "classifier_only": {
+        "attack_precision": 0.9686265396235185,
+        "attack_recall": 0.6495753136445103,
+        "attack_f1": 0.7776482112038808,
+        "attack_false_positive_rate": 0.027803521779425393,
+        "attack_true_positives": 8336,
+        "attack_false_positives": 270,
+        "attack_false_negatives": 4497,
+        "attack_true_negatives": 9441,
+        "detection_rate_not_classified_benign": 0.6495753136445103,
+        "missed_attacks": 4497,
+        "zero_day_precision": null,
+        "zero_day_recall": null,
+        "zero_day_f1": null,
+        "zero_day_false_positive_rate": null,
+        "zero_day_true_positives": null,
+        "zero_day_false_positives": null,
+        "zero_day_false_negatives": null,
+        "zero_day_true_negatives": null,
+        "zero_day_flag_rate_all_flows": null,
+        "zero_day_explicit_flag_rate": null,
+        "note": "zero-day binary metrics not defined for non-hybrid detectors"
+      },
+      "anomaly_only": {
+        "attack_precision": 0.9335241436617118,
+        "attack_recall": 0.7878905945608977,
+        "attack_f1": 0.8545469912102772,
+        "attack_false_positive_rate": 0.07414272474513438,
+        "attack_true_positives": 10111,
+        "attack_false_positives": 720,
+        "attack_false_negatives": 2722,
+        "attack_true_negatives": 8991,
+        "detection_rate_not_classified_benign": 0.7878905945608977,
+        "missed_attacks": 2722,
+        "zero_day_precision": null,
+        "zero_day_recall": null,
+        "zero_day_f1": null,
+        "zero_day_false_positive_rate": null,
+        "zero_day_true_positives": null,
+        "zero_day_false_positives": null,
+        "zero_day_false_negatives": null,
+        "zero_day_true_negatives": null,
+        "zero_day_flag_rate_all_flows": null,
+        "zero_day_explicit_flag_rate": null,
+        "note": "zero-day binary metrics not defined for non-hybrid detectors"
+      },
+      "hybrid": {
+        "attack_precision": 0.931498576481753,
+        "attack_recall": 0.8413465284812592,
+        "attack_f1": 0.8841303635768096,
+        "attack_false_positive_rate": 0.08176294923282876,
+        "attack_true_positives": 10797,
+        "attack_false_positives": 794,
+        "attack_false_negatives": 2036,
+        "attack_true_negatives": 8917,
+        "detection_rate_not_classified_benign": 0.8413465284812592,
+        "missed_attacks": 2036,
+        "zero_day_precision": 0.5159496634474685,
+        "zero_day_recall": 0.4941143497757848,
+        "zero_day_f1": 0.5047959914101647,
+        "zero_day_false_positive_rate": 0.08716273187183811,
+        "zero_day_true_positives": 1763,
+        "zero_day_false_positives": 1654,
+        "zero_day_false_negatives": 1805,
+        "zero_day_true_negatives": 17322,
+        "zero_day_flag_rate_all_flows": 0.15157026259758694,
+        "zero_day_explicit_flag_rate": 0.4941143497757848
+      }
+    },
+    "counts": {
+      "test_rows": 22544,
+      "true_attacks": 12833,
+      "true_zero_days": 3568,
+      "benign_flows": 9711,
+      "hybrid_anomalies": 10831,
+      "hybrid_anom_kept_as_known_family": 7414,
+      "hybrid_anom_promoted_to_zero_day": 3417,
+      "promoted_attacks": 2877,
+      "promoted_zero_days": 1763,
+      "promoted_benign_anomalies": 540
+    },
+    "novelty_gate": {
+      "rule": "anomaly AND (known_label == 'normal' OR confidence < 0.9)",
+      "confidence_threshold": 0.9,
+      "interpretation": "An anomaly that XGBoost confidently assigns to a known family is NOT promoted to zero_day. Only anomalies with a weak known-family reading are promoted. This is the novelty distinction required by the checklist."
+    }
+  },
+  "zero_day_binary": {
+    "held_out_zero_day_count": 3568,
+    "held_out_zero_day_not_classified_benign_rate": 0.7637331838565022,
+    "held_out_zero_day_explicit_zero_day_rate": 0.4941143497757848,
+    "binary_metrics": {
+      "attack_precision": 0.931498576481753,
+      "attack_recall": 0.8413465284812592,
+      "attack_f1": 0.8841303635768096,
+      "attack_false_positive_rate": 0.08176294923282876,
+      "attack_true_positives": 10797,
+      "attack_false_positives": 794,
+      "attack_false_negatives": 2036,
+      "attack_true_negatives": 8917,
+      "detection_rate_not_classified_benign": 0.8413465284812592,
+      "missed_attacks": 2036,
+      "zero_day_precision": 0.5159496634474685,
+      "zero_day_recall": 0.4941143497757848,
+      "zero_day_f1": 0.5047959914101647,
+      "zero_day_false_positive_rate": 0.08716273187183811,
+      "zero_day_true_positives": 1763,
+      "zero_day_false_positives": 1654,
+      "zero_day_false_negatives": 1805,
+      "zero_day_true_negatives": 17322,
+      "zero_day_flag_rate_all_flows": 0.15157026259758694,
+      "zero_day_explicit_flag_rate": 0.4941143497757848
+    }
+  },
+  "tier_precision": {
+    "tiers": {
+      "critical": {
+        "count": 10177,
+        "attacks_in_tier": 9537,
+        "benign_in_tier": 640,
+        "zero_days_in_tier": 2506,
+        "precision": 0.9371130981625233,
+        "false_positive_rate": 0.06590464421789723,
+        "benign_proportion": 0.06288690183747667,
+        "false_discovery_rate": 0.06288690183747667,
+        "alerts_per_1000_flows": 451.43,
+        "alerts_per_1000_benign_flows": 65.9
+      },
+      "review": {
+        "count": 1621,
+        "attacks_in_tier": 1426,
+        "benign_in_tier": 195,
+        "zero_days_in_tier": 283,
+        "precision": 0.8797038864898211,
+        "false_positive_rate": 0.020080321285140562,
+        "benign_proportion": 0.1202961135101789,
+        "false_discovery_rate": 0.1202961135101789,
+        "alerts_per_1000_flows": 71.9,
+        "alerts_per_1000_benign_flows": 20.08
+      },
+      "auto_log": {
+        "count": 10746,
+        "attacks_in_tier": 1870,
+        "benign_in_tier": 8876,
+        "zero_days_in_tier": 779,
+        "precision": 0.1740182393448725,
+        "false_positive_rate": 0.9140150344969622,
+        "benign_proportion": 0.8259817606551275,
+        "false_discovery_rate": 0.8259817606551275,
+        "alerts_per_1000_flows": 476.67,
+        "alerts_per_1000_benign_flows": 914.02
+      }
+    },
+    "total_flows": 22544,
+    "total_benign_flows": 9711,
+    "total_attack_flows": 12833,
+    "total_zero_day_flows": 3568,
+    "human_review_share": 0.5233321504613201,
+    "alerts_per_1000_human_review": 523.33,
+    "definition": "false_positive_rate (per tier) = benign flows routed into that tier / ALL benign test flows. precision (per tier) = attacks in tier / tier size. benign_proportion = benign in tier / tier size (== false_discovery_rate). These are per-tier, computed on the official NSL-KDD test split with the deployed cutoffs."
+  },
+  "cutoff_sensitivity": {
+    "validation_rows": 107077,
+    "validation_attacks": 49835,
+    "validation_zero_days": 0,
+    "validation_zero_days_note": "Validation split is drawn from known-class training data (zero-day families excluded by train.py's split_zero_day), so it contains ~0 held-out zero-day flows. Zero-day capture is therefore not measurable on validation; the sweep optimizes attack capture vs benign escalation only. Zero-day behaviour is evaluated on the held-out test families elsewhere (see detection_comparison and zero_day_binary).",
+    "validation_benign": 57242,
+    "deployed_configuration": {
+      "attack_share_target": 0.85,
+      "benign_escalation_target": 0.05,
+      "target_achieved": false,
+      "actual_attack_capture_in_human_tiers": 0.9987,
+      "actual_benign_escalation_rate": 0.1142,
+      "monotonicity_guard_fired": false,
+      "reason": "Validation sweep (with the same unknown-service Review-floor policy as deployed tiering): the 0.85/0.05 row achieves the targeted 85% attack capture in Critical (actual 0.8499) and 99.87% attack capture in human tiers, the monotonicity guard did NOT fire, BUT the targeted 5% benign escalation is NOT achieved \u2014 actual benign escalation is 11.42%. The gap is caused by the unknown-service Review floor: flows to services not in SERVICE_CRITICALITY are forced into human tiers regardless of cutoff, and they dominate benign escalation. No validation row achieves 5% benign escalation while keeping the Review floor (the floor is a hard safety policy, not tunable here). The 0.85/0.05 row is therefore retained as the best available tradeoff \u2014 it hits the attack-capture target and avoids the monotonicity guard \u2014 while the 5% benign-escalation target is documented as NOT met on validation because of the Review-floor policy. See the sweep table for the full tradeoff and the guard_fired rows where the target could not be achieved at all."
+    },
+    "sweep": [
+      {
+        "attack_share_target": 0.75,
+        "benign_escalation_target": 0.01,
+        "critical_cutoff": 0.6127,
+        "review_cutoff": 0.6127,
+        "raw_review_quantile": 0.7512,
+        "critical_count": 39652,
+        "review_count": 0,
+        "auto_log_count": 67425,
+        "human_review_share": 0.3703129523613848,
+        "auto_log_share": 0.6296870476386152,
+        "attack_capture_in_human_tiers": 0.7498143874786797,
+        "attack_capture_in_critical": 0.7498143874786797,
+        "zero_day_capture_in_human_tiers": null,
+        "zero_day_capture_in_critical": null,
+        "benign_in_human_tiers": 2285,
+        "benign_escalation_rate": 0.03991824185038957,
+        "monotonicity_guard_fired": true
+      },
+      {
+        "attack_share_target": 0.75,
+        "benign_escalation_target": 0.05,
+        "critical_cutoff": 0.6127,
+        "review_cutoff": 0.1351,
+        "raw_review_quantile": 0.1351,
+        "critical_count": 39652,
+        "review_count": 13045,
+        "auto_log_count": 54380,
+        "human_review_share": 0.4921411694388151,
+        "auto_log_share": 0.507858830561185,
+        "attack_capture_in_human_tiers": 1.0,
+        "attack_capture_in_critical": 0.7498143874786797,
+        "zero_day_capture_in_human_tiers": null,
+        "zero_day_capture_in_critical": null,
+        "benign_in_human_tiers": 2862,
+        "benign_escalation_rate": 0.04999825303099123,
+        "monotonicity_guard_fired": false
+      },
+      {
+        "attack_share_target": 0.75,
+        "benign_escalation_target": 0.1,
+        "critical_cutoff": 0.6127,
+        "review_cutoff": 0.1281,
+        "raw_review_quantile": 0.1281,
+        "critical_count": 39652,
+        "review_count": 15980,
+        "auto_log_count": 51445,
+        "human_review_share": 0.519551350897018,
+        "auto_log_share": 0.48044864910298196,
+        "attack_capture_in_human_tiers": 1.0,
+        "attack_capture_in_critical": 0.7498143874786797,
+        "zero_day_capture_in_human_tiers": null,
+        "zero_day_capture_in_critical": null,
+        "benign_in_human_tiers": 5797,
+        "benign_escalation_rate": 0.1012717934383844,
+        "monotonicity_guard_fired": false
+      },
+      {
+        "attack_share_target": 0.8,
+        "benign_escalation_target": 0.01,
+        "critical_cutoff": 0.6052,
+        "review_cutoff": 0.6052,
+        "raw_review_quantile": 0.7512,
+        "critical_count": 42170,
+        "review_count": 0,
+        "auto_log_count": 64907,
+        "human_review_share": 0.3938287400655603,
+        "auto_log_share": 0.6061712599344397,
+        "attack_capture_in_human_tiers": 0.8003210594963379,
+        "attack_capture_in_critical": 0.8003210594963379,
+        "zero_day_capture_in_human_tiers": null,
+        "zero_day_capture_in_critical": null,
+        "benign_in_human_tiers": 2286,
+        "benign_escalation_rate": 0.03993571154047727,
+        "monotonicity_guard_fired": true
+      },
+      {
+        "attack_share_target": 0.8,
+        "benign_escalation_target": 0.05,
+        "critical_cutoff": 0.6052,
+        "review_cutoff": 0.1351,
+        "raw_review_quantile": 0.1351,
+        "critical_count": 42170,
+        "review_count": 10527,
+        "auto_log_count": 54380,
+        "human_review_share": 0.4921411694388151,
+        "auto_log_share": 0.507858830561185,
+        "attack_capture_in_human_tiers": 1.0,
+        "attack_capture_in_critical": 0.8003210594963379,
+        "zero_day_capture_in_human_tiers": null,
+        "zero_day_capture_in_critical": null,
+        "benign_in_human_tiers": 2862,
+        "benign_escalation_rate": 0.04999825303099123,
+        "monotonicity_guard_fired": false
+      },
+      {
+        "attack_share_target": 0.8,
+        "benign_escalation_target": 0.1,
+        "critical_cutoff": 0.6052,
+        "review_cutoff": 0.1281,
+        "raw_review_quantile": 0.1281,
+        "critical_count": 42170,
+        "review_count": 13462,
+        "auto_log_count": 51445,
+        "human_review_share": 0.519551350897018,
+        "auto_log_share": 0.48044864910298196,
+        "attack_capture_in_human_tiers": 1.0,
+        "attack_capture_in_critical": 0.8003210594963379,
+        "zero_day_capture_in_human_tiers": null,
+        "zero_day_capture_in_critical": null,
+        "benign_in_human_tiers": 5797,
+        "benign_escalation_rate": 0.1012717934383844,
+        "monotonicity_guard_fired": false
+      },
+      {
+        "attack_share_target": 0.85,
+        "benign_escalation_target": 0.01,
+        "critical_cutoff": 0.5905,
+        "review_cutoff": 0.5905,
+        "raw_review_quantile": 0.7512,
+        "critical_count": 44648,
+        "review_count": 0,
+        "auto_log_count": 62429,
+        "human_review_share": 0.4169709648197092,
+        "auto_log_share": 0.5830290351802908,
+        "attack_capture_in_human_tiers": 0.8499849503361092,
+        "attack_capture_in_critical": 0.8499849503361092,
+        "zero_day_capture_in_human_tiers": null,
+        "zero_day_capture_in_critical": null,
+        "benign_in_human_tiers": 2289,
+        "benign_escalation_rate": 0.03998812061074036,
+        "monotonicity_guard_fired": true
+      },
+      {
+        "attack_share_target": 0.85,
+        "benign_escalation_target": 0.05,
+        "critical_cutoff": 0.5905,
+        "review_cutoff": 0.1351,
+        "raw_review_quantile": 0.1351,
+        "critical_count": 44648,
+        "review_count": 8049,
+        "auto_log_count": 54380,
+        "human_review_share": 0.4921411694388151,
+        "auto_log_share": 0.507858830561185,
+        "attack_capture_in_human_tiers": 1.0,
+        "attack_capture_in_critical": 0.8499849503361092,
+        "zero_day_capture_in_human_tiers": null,
+        "zero_day_capture_in_critical": null,
+        "benign_in_human_tiers": 2862,
+        "benign_escalation_rate": 0.04999825303099123,
+        "monotonicity_guard_fired": false
+      },
+      {
+        "attack_share_target": 0.85,
+        "benign_escalation_target": 0.1,
+        "critical_cutoff": 0.5905,
+        "review_cutoff": 0.1281,
+        "raw_review_quantile": 0.1281,
+        "critical_count": 44648,
+        "review_count": 10984,
+        "auto_log_count": 51445,
+        "human_review_share": 0.519551350897018,
+        "auto_log_share": 0.48044864910298196,
+        "attack_capture_in_human_tiers": 1.0,
+        "attack_capture_in_critical": 0.8499849503361092,
+        "zero_day_capture_in_human_tiers": null,
+        "zero_day_capture_in_critical": null,
+        "benign_in_human_tiers": 5797,
+        "benign_escalation_rate": 0.1012717934383844,
+        "monotonicity_guard_fired": false
+      },
+      {
+        "attack_share_target": 0.9,
+        "benign_escalation_target": 0.01,
+        "critical_cutoff": 0.5683,
+        "review_cutoff": 0.5683,
+        "raw_review_quantile": 0.7512,
+        "critical_count": 47142,
+        "review_count": 0,
+        "auto_log_count": 59935,
+        "human_review_share": 0.4402626147538687,
+        "auto_log_share": 0.5597373852461313,
+        "attack_capture_in_human_tiers": 0.9000300993277817,
+        "attack_capture_in_critical": 0.9000300993277817,
+        "zero_day_capture_in_human_tiers": null,
+        "zero_day_capture_in_critical": null,
+        "benign_in_human_tiers": 2289,
+        "benign_escalation_rate": 0.03998812061074036,
+        "monotonicity_guard_fired": true
+      },
+      {
+        "attack_share_target": 0.9,
+        "benign_escalation_target": 0.05,
+        "critical_cutoff": 0.5683,
+        "review_cutoff": 0.1351,
+        "raw_review_quantile": 0.1351,
+        "critical_count": 47142,
+        "review_count": 5555,
+        "auto_log_count": 54380,
+        "human_review_share": 0.4921411694388151,
+        "auto_log_share": 0.507858830561185,
+        "attack_capture_in_human_tiers": 1.0,
+        "attack_capture_in_critical": 0.9000300993277817,
+        "zero_day_capture_in_human_tiers": null,
+        "zero_day_capture_in_critical": null,
+        "benign_in_human_tiers": 2862,
+        "benign_escalation_rate": 0.04999825303099123,
+        "monotonicity_guard_fired": false
+      },
+      {
+        "attack_share_target": 0.9,
+        "benign_escalation_target": 0.1,
+        "critical_cutoff": 0.5683,
+        "review_cutoff": 0.1281,
+        "raw_review_quantile": 0.1281,
+        "critical_count": 47142,
+        "review_count": 8490,
+        "auto_log_count": 51445,
+        "human_review_share": 0.519551350897018,
+        "auto_log_share": 0.48044864910298196,
+        "attack_capture_in_human_tiers": 1.0,
+        "attack_capture_in_critical": 0.9000300993277817,
+        "zero_day_capture_in_human_tiers": null,
+        "zero_day_capture_in_critical": null,
+        "benign_in_human_tiers": 5797,
+        "benign_escalation_rate": 0.1012717934383844,
+        "monotonicity_guard_fired": false
+      },
+      {
+        "attack_share_target": 0.95,
+        "benign_escalation_target": 0.01,
+        "critical_cutoff": 0.5333,
+        "review_cutoff": 0.5333,
+        "raw_review_quantile": 0.7512,
+        "critical_count": 49555,
+        "review_count": 0,
+        "auto_log_count": 57522,
+        "human_review_share": 0.46279779971422436,
+        "auto_log_share": 0.5372022002857757,
+        "attack_capture_in_human_tiers": 0.9484298184007224,
+        "attack_capture_in_critical": 0.9484298184007224,
+        "zero_day_capture_in_human_tiers": null,
+        "zero_day_capture_in_critical": null,
+        "benign_in_human_tiers": 2290,
+        "benign_escalation_rate": 0.040005590300828064,
+        "monotonicity_guard_fired": true
+      },
+      {
+        "attack_share_target": 0.95,
+        "benign_escalation_target": 0.05,
+        "critical_cutoff": 0.5333,
+        "review_cutoff": 0.1351,
+        "raw_review_quantile": 0.1351,
+        "critical_count": 49555,
+        "review_count": 3142,
+        "auto_log_count": 54380,
+        "human_review_share": 0.4921411694388151,
+        "auto_log_share": 0.507858830561185,
+        "attack_capture_in_human_tiers": 1.0,
+        "attack_capture_in_critical": 0.9484298184007224,
+        "zero_day_capture_in_human_tiers": null,
+        "zero_day_capture_in_critical": null,
+        "benign_in_human_tiers": 2862,
+        "benign_escalation_rate": 0.04999825303099123,
+        "monotonicity_guard_fired": false
+      },
+      {
+        "attack_share_target": 0.95,
+        "benign_escalation_target": 0.1,
+        "critical_cutoff": 0.5333,
+        "review_cutoff": 0.1281,
+        "raw_review_quantile": 0.1281,
+        "critical_count": 49555,
+        "review_count": 6077,
+        "auto_log_count": 51445,
+        "human_review_share": 0.519551350897018,
+        "auto_log_share": 0.48044864910298196,
+        "attack_capture_in_human_tiers": 1.0,
+        "attack_capture_in_critical": 0.9484298184007224,
+        "zero_day_capture_in_human_tiers": null,
+        "zero_day_capture_in_critical": null,
+        "benign_in_human_tiers": 5797,
+        "benign_escalation_rate": 0.1012717934383844,
+        "monotonicity_guard_fired": false
+      }
+    ]
+  },
+  "shap_faithfulness": {
+    "status": "ok",
+    "sampled_flows": 200,
+    "sampled_classes": [
+      "dos",
+      "normal",
+      "probe",
+      "r2l",
+      "u2r"
+    ],
+    "expected_value_per_class": {
+      "dos": 1.8933104276657104,
+      "normal": 2.628167152404785,
+      "probe": 1.066099762916565,
+      "r2l": -0.954065203666687,
+      "u2r": -3.2543094158172607
+    },
+    "mean_abs_shap_residual": 1.7670616507530212e-06,
+    "max_abs_shap_residual": 8.58306884765625e-06,
+    "median_abs_shap_residual": 1.430511474609375e-06,
+    "mean_abs_residual_per_class": {
+      "dos": 1.8975138664245606e-06,
+      "normal": 2.1745264530181886e-06,
+      "probe": 9.526684880256652e-07,
+      "r2l": 1.8575787544250488e-06,
+      "u2r": 1.953020691871643e-06
+    },
+    "identity_checked": "sum_j shap[i,j,c] == booster_output[i,c] - expected_value[c]",
+    "interpretation": "Tree SHAP values sum (within ~1e-6) to the model margin minus the base value for every sample and class, confirming the explainer is internally consistent with the classifier it explains. The dashboard SHAP panel (top-8 features for the predicted class) therefore reflects a decomposition that sums to the right prediction margin. This is a consistency check on the explainer, not a claim that the ranked features are the true causal drivers."
+  },
+  "auto_log_safety": {
+    "total_flows": 22544,
+    "total_attacks": 12833,
+    "total_zero_days": 3568,
+    "total_benign": 9711,
+    "auto_log": {
+      "count": 10746,
+      "share_of_all_flows": 0.4767,
+      "benign_in_auto_log": 8876,
+      "benign_share_of_auto_log": 0.826,
+      "attacks_in_auto_log": 1870,
+      "attacks_share_of_all_attacks": 0.1457,
+      "zero_days_in_auto_log": 779,
+      "zero_days_share_of_all_zero_days": 0.2183
+    },
+    "human_tiers": {
+      "count": 11798,
+      "share_of_all_flows": 0.5233,
+      "attacks_in_human_tiers": 10963,
+      "attacks_share_in_human_tiers": 0.8543,
+      "zero_days_in_human_tiers": 2789,
+      "zero_days_share_in_human_tiers": 0.7817
+    },
+    "cross_tab_attacks": {
+      "n": 1870,
+      "predicted_label_counts": {
+        "normal": 1870
+      },
+      "known_label_counts": {
+        "normal": 1870
+      },
+      "all_predicted_normal": true,
+      "all_known_normal": true,
+      "confidence_min": 0.9124834537506104,
+      "confidence_max": 0.9999860525131226,
+      "confidence_mean": 0.9965044260025024,
+      "confidence_ge_0.9_count": 1870,
+      "confidence_ge_0.899_count": 1870,
+      "recon_min": 0.0025833007446718933,
+      "recon_max": 0.24587133693673557,
+      "recon_mean": 0.09330426313571429,
+      "recon_all_below_threshold": true,
+      "recon_max_vs_threshold": 0.2459,
+      "threshold": 0.2471,
+      "severity_counts": {
+        "info": 1870
+      },
+      "all_severity_info": true,
+      "explicit_zero_day_count": 0,
+      "explicit_zero_day_lines": 1870
+    },
+    "cross_tab_zero_days": {
+      "n": 779,
+      "predicted_label_counts": {
+        "normal": 779
+      },
+      "known_label_counts": {
+        "normal": 779
+      },
+      "all_predicted_normal": true,
+      "all_known_normal": true,
+      "confidence_min": 0.9322820901870728,
+      "confidence_max": 0.9999644756317139,
+      "confidence_mean": 0.9975605607032776,
+      "confidence_ge_0.9_count": 779,
+      "confidence_ge_0.899_count": 779,
+      "recon_min": 0.0025833007446718933,
+      "recon_max": 0.24587133693673557,
+      "recon_mean": 0.08215799726911467,
+      "recon_all_below_threshold": true,
+      "recon_max_vs_threshold": 0.2459,
+      "threshold": 0.2471,
+      "severity_counts": {
+        "info": 779
+      },
+      "all_severity_info": true,
+      "explicit_zero_day_count": 0,
+      "explicit_zero_day_lines": 779
+    },
+    "interpretation": "The auto_log tier contains flows the prioritizer routed to routine handling. B4's key honest question is: of those, how many were real attacks / zero-days, and what did the detector believe about them? If the auto-logged attacks all have predicted_label='normal', high confidence, and below-threshold reconstruction error, then the auto-logging is a downstream consequence of a detection failure (the hybrid confidently misclassified the attack as normal on both signals), not a prioritizer error. If instead the auto-logged attacks had anomalous recon or a confident known-family label, that would indicate a prioritizer routing problem. The cross_tab_* fields make this distinction checkable. This audit reports counts; it does NOT assert that auto-logging is safe. Whether the residual is acceptable is an operational decision."
+  },
+  "evaluation_note": "These keys were added by app.ml.evaluate (cross-check checklist A1-A5). They supplement, and do not replace, the existing metrics produced by train.py. Existing keys are unchanged.",
+  "per_family_test": {
+    "per_family": {
+      "normal": {
+        "n": 9711,
+        "n_seen_family_rows": 9711,
+        "n_held_out_rows": 0,
+        "false_alarm_rate": 0.08176294923282876
+      },
+      "dos": {
+        "n": 7460,
+        "n_seen_family_rows": 5741,
+        "n_held_out_rows": 1719,
+        "detection_rate": 0.9544235924932976,
+        "family_recall_seen_rows": 0.9930325727225222,
+        "detection_rate_held_out_rows": 0.8051192553810355,
+        "classifier_precision_for_family": 0.9642144063891875
+      },
+      "probe": {
+        "n": 2421,
+        "n_seen_family_rows": 1106,
+        "n_held_out_rows": 1315,
+        "detection_rate": 0.9624122263527468,
+        "family_recall_seen_rows": 1.0,
+        "detection_rate_held_out_rows": 0.9307984790874525,
+        "classifier_precision_for_family": 0.8430051813471503
+      },
+      "r2l": {
+        "n": 2885,
+        "n_seen_family_rows": 2381,
+        "n_held_out_rows": 504,
+        "detection_rate": 0.45164644714038127,
+        "family_recall_seen_rows": 0.061738765224695506,
+        "detection_rate_held_out_rows": 0.19444444444444445,
+        "classifier_precision_for_family": 0.9671052631578947
+      },
+      "u2r": {
+        "n": 67,
+        "n_seen_family_rows": 37,
+        "n_held_out_rows": 30,
+        "detection_rate": 0.6567164179104478,
+        "family_recall_seen_rows": 0.13513513513513514,
+        "detection_rate_held_out_rows": 0.6333333333333333,
+        "classifier_precision_for_family": 0.6923076923076923
+      }
+    },
+    "classifier_confusion_true_vs_known_label": {
+      "normal": {
+        "normal": 9441,
+        "dos": 68,
+        "probe": 199,
+        "r2l": 2,
+        "u2r": 1
+      },
+      "dos": {
+        "normal": 1080,
+        "dos": 6278,
+        "probe": 102,
+        "r2l": 0,
+        "u2r": 0
+      },
+      "probe": {
+        "normal": 629,
+        "dos": 165,
+        "probe": 1627,
+        "r2l": 0,
+        "u2r": 0
+      },
+      "r2l": {
+        "normal": 2733,
+        "dos": 0,
+        "probe": 2,
+        "r2l": 147,
+        "u2r": 3
+      },
+      "u2r": {
+        "normal": 55,
+        "dos": 0,
+        "probe": 0,
+        "r2l": 3,
+        "u2r": 9
+      }
+    },
+    "note": "known_label is XGBoost's reading before the anomaly gate. Held-out (unseen) attack rows are split out because no classifier trained on known families can be expected to name them."
+  }
+}

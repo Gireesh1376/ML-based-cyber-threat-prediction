@@ -1,0 +1,350 @@
+{
+  "problem": "Problem 2: Encrypted TLS Traffic Threat Detection",
+  "dataset_name": "Triage Malware Sandbox TLS Traffic Collection (Sept 2025)",
+  "model_architecture": "XGBoost Classifier with SPLT Packet Dynamics & TLS Handshake Features",
+  "timestamp_utc": "2026-10-25T15:16:06Z",
+  "split_summary": {
+    "train_rows": 154256,
+    "test_rows": 50377,
+    "train_sample_ids": 4127,
+    "test_sample_ids": 2473,
+    "sample_id_overlap": 0,
+    "train_positives": 88695,
+    "train_negatives": 65561,
+    "test_positives": 18773,
+    "test_negatives": 31604,
+    "train_dates": "250901 to 250922",
+    "test_dates": "250923 to 250930",
+    "natural_zero_days": [
+      "44caliber",
+      "bdaejec",
+      "cerber",
+      "fickerstealer",
+      "gandcrab",
+      "hawkeye",
+      "marsstealer",
+      "meshagent",
+      "neptunerat",
+      "oski",
+      "petya",
+      "wshrat"
+    ]
+  },
+  "ablation_comparison": {
+    "Model A (Flow + Handshake Baseline)": {
+      "features_count": 19,
+      "training_time_sec": 4.8,
+      "accuracy": 0.9735,
+      "precision": 0.9554,
+      "recall": 0.9744,
+      "f1": 0.9648,
+      "benign_fpr": 0.027,
+      "roc_auc": 0.9972,
+      "pr_auc": 0.9952
+    },
+    "Model B (Baseline + SPLT Sequence)": {
+      "features_count": 39,
+      "training_time_sec": 6.6,
+      "accuracy": 0.9795,
+      "precision": 0.9641,
+      "recall": 0.9815,
+      "f1": 0.9727,
+      "benign_fpr": 0.0217,
+      "roc_auc": 0.9983,
+      "pr_auc": 0.997
+    },
+    "Model C (Full: SPLT + Categoricals)": {
+      "features_count": 71,
+      "training_time_sec": 6.62,
+      "accuracy": 0.9799,
+      "precision": 0.9644,
+      "recall": 0.9823,
+      "f1": 0.9733,
+      "benign_fpr": 0.0215,
+      "roc_auc": 0.9983,
+      "pr_auc": 0.997
+    }
+  },
+  "primary_evaluation": {
+    "threshold": 0.5,
+    "accuracy": 0.9799,
+    "precision": 0.9644,
+    "recall": 0.9823,
+    "f1": 0.9733,
+    "benign_fpr": 0.0215,
+    "true_negatives": 30923,
+    "false_positives": 681,
+    "false_negatives": 332,
+    "true_positives": 18441,
+    "roc_auc": 0.9983,
+    "pr_auc": 0.997,
+    "confusion_matrix": [
+      [
+        30923,
+        681
+      ],
+      [
+        332,
+        18441
+      ]
+    ]
+  },
+  "slice_evaluation": {
+    "seen_families_recall": 0.9841,
+    "seen_families_count": 18031,
+    "natural_zero_day_recall": 0.9394,
+    "natural_zero_day_count": 742,
+    "natural_zero_day_families": [
+      "44caliber",
+      "bdaejec",
+      "cerber",
+      "fickerstealer",
+      "gandcrab",
+      "hawkeye",
+      "marsstealer",
+      "meshagent",
+      "neptunerat",
+      "oski",
+      "petya",
+      "wshrat"
+    ],
+    "clean_no_malware_fpr": 0.0,
+    "clean_no_malware_count": 0
+  },
+  "threshold_sweep": [
+    {
+      "threshold": 0.1,
+      "precision": 0.935,
+      "recall": 0.9978,
+      "f1": 0.9654,
+      "benign_fpr": 0.0412,
+      "tp": 18732,
+      "fp": 1302,
+      "fn": 41,
+      "tn": 30302
+    },
+    {
+      "threshold": 0.2,
+      "precision": 0.9475,
+      "recall": 0.994,
+      "f1": 0.9702,
+      "benign_fpr": 0.0327,
+      "tp": 18660,
+      "fp": 1033,
+      "fn": 113,
+      "tn": 30571
+    },
+    {
+      "threshold": 0.3,
+      "precision": 0.9548,
+      "recall": 0.99,
+      "f1": 0.9721,
+      "benign_fpr": 0.0278,
+      "tp": 18586,
+      "fp": 879,
+      "fn": 187,
+      "tn": 30725
+    },
+    {
+      "threshold": 0.4,
+      "precision": 0.9594,
+      "recall": 0.9839,
+      "f1": 0.9715,
+      "benign_fpr": 0.0247,
+      "tp": 18470,
+      "fp": 781,
+      "fn": 303,
+      "tn": 30823
+    },
+    {
+      "threshold": 0.5,
+      "precision": 0.9644,
+      "recall": 0.9823,
+      "f1": 0.9733,
+      "benign_fpr": 0.0215,
+      "tp": 18441,
+      "fp": 681,
+      "fn": 332,
+      "tn": 30923
+    },
+    {
+      "threshold": 0.6,
+      "precision": 0.968,
+      "recall": 0.9769,
+      "f1": 0.9724,
+      "benign_fpr": 0.0192,
+      "tp": 18340,
+      "fp": 607,
+      "fn": 433,
+      "tn": 30997
+    },
+    {
+      "threshold": 0.7,
+      "precision": 0.9716,
+      "recall": 0.9734,
+      "f1": 0.9725,
+      "benign_fpr": 0.0169,
+      "tp": 18273,
+      "fp": 535,
+      "fn": 500,
+      "tn": 31069
+    },
+    {
+      "threshold": 0.8,
+      "precision": 0.9765,
+      "recall": 0.9639,
+      "f1": 0.9702,
+      "benign_fpr": 0.0138,
+      "tp": 18096,
+      "fp": 436,
+      "fn": 677,
+      "tn": 31168
+    },
+    {
+      "threshold": 0.9,
+      "precision": 0.983,
+      "recall": 0.9471,
+      "f1": 0.9647,
+      "benign_fpr": 0.0097,
+      "tp": 17779,
+      "fp": 307,
+      "fn": 994,
+      "tn": 31297
+    }
+  ],
+  "top_features": [
+    {
+      "feature": "has_alpn",
+      "importance": 0.3676
+    },
+    {
+      "feature": "ja4_t12d1909h2",
+      "importance": 0.3663
+    },
+    {
+      "feature": "alpn_count",
+      "importance": 0.1209
+    },
+    {
+      "feature": "client_ext_count",
+      "importance": 0.0329
+    },
+    {
+      "feature": "ja4_t12i190700",
+      "importance": 0.0297
+    },
+    {
+      "feature": "scs_C02B",
+      "importance": 0.0079
+    },
+    {
+      "feature": "rec_2",
+      "importance": 0.0057
+    },
+    {
+      "feature": "ps",
+      "importance": 0.0055
+    },
+    {
+      "feature": "scs_1302",
+      "importance": 0.0051
+    },
+    {
+      "feature": "scs_unknown",
+      "importance": 0.0049
+    },
+    {
+      "feature": "scs_1301",
+      "importance": 0.0045
+    },
+    {
+      "feature": "dp",
+      "importance": 0.0034
+    },
+    {
+      "feature": "scs_C02C",
+      "importance": 0.0033
+    },
+    {
+      "feature": "rec_7",
+      "importance": 0.0033
+    },
+    {
+      "feature": "server_ext_count",
+      "importance": 0.0032
+    }
+  ],
+  "feature_names": [
+    "bs",
+    "br",
+    "ps",
+    "pr",
+    "td",
+    "dp",
+    "bytes_ratio",
+    "pkts_ratio",
+    "bytes_per_pkt_client",
+    "bytes_per_pkt_server",
+    "byte_rate",
+    "pkt_rate",
+    "cipher_count",
+    "client_ext_count",
+    "sig_alg_count",
+    "server_ext_count",
+    "alpn_count",
+    "has_alpn",
+    "has_sni",
+    "rec_0",
+    "rec_1",
+    "rec_2",
+    "rec_3",
+    "rec_4",
+    "rec_5",
+    "rec_6",
+    "rec_7",
+    "rec_8",
+    "rec_9",
+    "rec_10",
+    "rec_11",
+    "rec_12",
+    "rec_13",
+    "rec_14",
+    "rec_15",
+    "rec_16",
+    "rec_17",
+    "rec_18",
+    "rec_19",
+    "cver_0303",
+    "cver_0301",
+    "cver_other",
+    "scs_C02F",
+    "scs_C02C",
+    "scs_C030",
+    "scs_1302",
+    "scs_C02B",
+    "scs_1301",
+    "scs_unknown",
+    "scs_1303",
+    "scs_C014",
+    "scs_009C",
+    "scs_CCA9",
+    "scs_002F",
+    "scs_other",
+    "ja4_t12d1909h2",
+    "ja4_t12d190800",
+    "ja4_t13d1516h2",
+    "ja4_t12d210700",
+    "ja4_t13d201200",
+    "ja4_t13d201100",
+    "ja4_t13d1517h2",
+    "ja4_t13i010400",
+    "ja4_t12d1809h2",
+    "ja4_t12d180800",
+    "ja4_t13d221000",
+    "ja4_t12i190700",
+    "ja4_t13d450900",
+    "ja4_t12d200700",
+    "ja4_t13d141000",
+    "ja4_other"
+  ]
+}

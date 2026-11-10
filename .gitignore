@@ -9,9 +9,5 @@ node_modules/
 dist/
 .DS_Store
 .env
-backend/models/*.joblib
-backend/models/*.pkl
-backend/models/*.json
-backend/data/raw/
 frontend/dist/
 *.log
