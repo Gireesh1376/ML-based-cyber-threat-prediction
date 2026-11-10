@@ -87,14 +87,12 @@ BACKEND_PORT=8000
 
 Elasticsearch is optional. If it is unavailable, the application uses the preloaded `demo_alerts.json` fallback.
 
-### 2. Install backend dependencies
+### 2. Install dependencies
 
 ```powershell
-cd backend
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-cd ..
 ```
 
 ### 3. Install frontend dependencies
@@ -110,22 +108,13 @@ cd ..
 Choose one of the following methods.
 
 ### Option A: Windows launcher
-
-From the project root, run:
-
-```cmd
-start_aegis.bat
-```
-
-### Option B: Run backend and frontend separately
-
 Open two terminals in the project root.
 
 **Terminal 1 – Backend**
 
 ```powershell
-cd backend
 .venv\Scripts\activate
+cd backend
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
