@@ -1,135 +1,170 @@
-# AEGIS --- Cybersecurity Operations & Threat Detection Platform
+# AEGIS – Cybersecurity Operations & Threat Detection Platform
 
-AEGIS is a full-stack platform for detecting network threats, analysing
-encrypted TLS traffic, prioritising security alerts, and evaluating
-resistance to adversarial evasion.
+AEGIS is a machine-learning-based cybersecurity platform designed to detect network threats, analyse encrypted TLS traffic, prioritise security alerts, and evaluate the robustness of detection models against adversarial evasion techniques.
 
-## Project Overview
+The project combines a React-based security operations dashboard with a FastAPI backend and machine learning components. It brings multiple threat-analysis capabilities together in one interface, making it easier to inspect detections, review alert priorities, and run benchmark evaluations.
 
--   **Frontend:** React 19, Vite, TypeScript
--   **Backend:** FastAPI (Python)
--   **Machine learning:** XGBoost and an MLPRegressor bottleneck
-    reconstruction network
--   **Alert storage:** Elasticsearch (optional), with automatic fallback
-    to `demo_alerts.json`
--   **Dashboard:** SOC operations dashboard with threat detection,
-    encrypted traffic analysis, alert triage, and adversarial testing
+## Key Features
 
-## Core Capabilities
+### 1. Known and Zero-Day Threat Detection
+- Uses a hybrid detection approach combining **XGBoost classification** and an **MLPRegressor-based reconstruction model**.
+- Uses the NSL-KDD dataset for model development and evaluation.
+- Combines classification results with reconstruction-based anomaly signals to help identify potentially unfamiliar attack patterns.
 
-1.  **Zero-Day & Known Threat Detection:** Hybrid XGBoost and
-    reconstruction-based anomaly detection using the NSL-KDD dataset.
-2.  **Encrypted TLS Threat Detection:** Analyses 71 observable traffic
-    metadata features, including JA4 and packet size/direction patterns,
-    without decrypting payloads.
-3.  **Alert Prioritisation:** Assigns alerts to Critical, Review, and
-    Auto-log tiers using a five-factor risk score: attack confidence,
-    reconstruction anomaly, family severity, asset criticality, and
-    zero-day indicator.
-4.  **Adversarial Robustness:** Evaluates and hardens detection against
-    constrained FGSM, UAP, and DEMGAN-style manifold-drift
-    perturbations.
+### 2. Encrypted TLS Traffic Analysis
+- Analyses encrypted traffic through observable flow and TLS metadata rather than decrypting packet payloads.
+- Uses 71 metadata features, including JA4-related information, cipher-suite details, SNI entropy, and packet size/direction patterns.
+- Supports analysis of the supplied encrypted-traffic dataset and benchmark workflow.
+
+### 3. Intelligent Alert Prioritisation
+- Calculates a risk score using five factors:
+  - Attack confidence
+  - Reconstruction anomaly
+  - Attack-family severity
+  - Asset criticality
+  - Zero-day indicator
+- Groups alerts into **Critical**, **Review**, and **Auto-log** tiers to support security-alert triage.
+
+### 4. Adversarial Robustness Evaluation
+- Evaluates how detection behaves under adversarial perturbations.
+- Includes constrained FGSM, Universal Adversarial Perturbation (UAP), and DEMGAN-style manifold-drift experiments.
+- Provides benchmark scripts for reproducing the robustness evaluations. The DEMGAN-style approach is an empirical surrogate rather than a separately trained neural GAN.
+
+## Technology Stack
+
+| Component | Technologies |
+|---|---|
+| Frontend | React 19, Vite, TypeScript |
+| Backend | Python, FastAPI |
+| Machine Learning | XGBoost, scikit-learn, MLPRegressor |
+| Alert Storage | Elasticsearch (optional), JSON fallback |
+| Data | NSL-KDD and encrypted TLS traffic datasets |
 
 ## Datasets
 
--   **NSL-KDD:** Used for zero-day detection, alert prioritisation, and
-    adversarial robustness. Dataset files are included under
-    `backend/data/raw/` and `Data_csv/`.
--   **Encrypted TLS traffic:** Used for encrypted traffic detection.
-    Dataset files are included under
-    `backend/data/raw/encrypted_traffic/`.
+- **NSL-KDD:** Used for known/zero-day threat detection and related model evaluations. Dataset files are available under `backend/data/raw/` and `Data_csv/`.
+- **Encrypted TLS traffic:** Used for encrypted traffic analysis. Dataset files are available under `backend/data/raw/encrypted_traffic/`.
+
+The project uses the datasets included in the repository. Refer to the original dataset sources for further details:
+
+- [NSL-KDD Dataset](https://www.unb.ca/cic/datasets/nsl.html)
+- [Stratosphere Malware/TLS Datasets](https://www.stratosphereips.org/datasets-malware)
+
+## Architecture at a Glance
+
+1. The **React dashboard** provides the user interface for viewing detections, analysing encrypted traffic, reviewing alerts, and accessing adversarial evaluation features.
+2. The **FastAPI backend** exposes the application endpoints and connects the interface to the analysis and machine-learning components.
+3. The **ML components** process the supported datasets and traffic features to generate detection and anomaly signals.
+4. The **alert-prioritisation component** combines risk factors to assign alert tiers.
+5. **Elasticsearch** can be used for alert storage. If it is unavailable, the application can use the preloaded `demo_alerts.json` fallback.
 
 ## Requirements
 
--   Python 3.11 or later
--   Node.js 18 or later (includes npm)
--   Docker and Docker Compose (optional; used for Elasticsearch)
+- Python 3.11 or later
+- Node.js 18 or later (includes npm)
+- Docker and Docker Compose (optional; used for Elasticsearch)
 
-## Setup
+## Installation and Setup
 
-Run these commands from the project root.
+Run the following commands from the project root.
 
 ### 1. Configure environment
 
-Copy `.env.example` to `.env`:
+Copy the example environment file:
 
-``` powershell
+```powershell
 copy .env.example .env
 ```
 
-Default configuration:
+The default configuration is:
 
-``` env
+```env
 ELASTICSEARCH_URL=http://localhost:9200
 ELASTICSEARCH_INDEX=aegis-alerts
 BACKEND_HOST=127.0.0.1
 BACKEND_PORT=8000
 ```
 
-Elasticsearch is optional. If it is unavailable, the application uses
-the pre-loaded `demo_alerts.json` fallback.
+Elasticsearch is optional. If it is unavailable, the application uses the preloaded `demo_alerts.json` fallback.
 
-### 2. Install dependencies
+### 2. Install backend dependencies
 
-``` powershell
+```powershell
+cd backend
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
+cd ..
 ```
 
 ### 3. Install frontend dependencies
 
-``` powershell
+```powershell
 cd frontend
 npm install
 cd ..
 ```
 
-## Run the Project
-Open two terminals from the project root.
+## Running the Application
 
-**Terminal 1 --- Backend**
+Choose one of the following methods.
 
-``` powershell
-.venv\Scripts\activate
-cd backend
-uvicorn app.main:app --reload --port 8000
+### Option A: Windows launcher
+
+From the project root, run:
+
+```cmd
+start_aegis.bat
 ```
 
-**Terminal 2 --- Frontend**
+### Option B: Run backend and frontend separately
 
-``` powershell
+Open two terminals in the project root.
+
+**Terminal 1 – Backend**
+
+```powershell
+cd backend
+.venv\Scripts\activate
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+**Terminal 2 – Frontend**
+
+```powershell
 cd frontend
 npm run dev
 ```
 
 ### Option C: Docker Compose
 
-If Docker is installed:
+If Docker is installed and configured:
 
-``` bash
+```bash
 docker compose up -d --build
 ```
 
-## Access the Application
+## Application URLs
 
--   **SOC Dashboard:** http://localhost:5173
--   **Backend API:** http://localhost:8000
--   **Interactive API documentation:** http://localhost:8000/docs
--   **Elasticsearch (optional):** http://localhost:9200
+| Service | URL |
+|---|---|
+| AEGIS Dashboard | http://localhost:5173 |
+| Backend API | http://localhost:8000 |
+| Interactive API documentation | http://localhost:8000/docs |
+| Elasticsearch (optional) | http://localhost:9200 |
 
-## Verification
+## Testing and Benchmark Reproduction
 
-Run the backend tests from the project root:
+Run the backend test suite from the project root:
 
-``` bash
+```bash
 cd backend
 python -m pytest tests -q
 ```
 
-Reproduce the benchmark evaluations:
+To reproduce the benchmark evaluations, run the scripts from the `backend` directory:
 
-``` bash
+```bash
 # Encrypted TLS benchmark
 python scripts/reproduce_encrypted_benchmark.py --verify
 
@@ -137,20 +172,17 @@ python scripts/reproduce_encrypted_benchmark.py --verify
 python scripts/reproduce_adversarial_benchmark.py
 ```
 
-## Important Scope Notes
+## Current Scope and Limitations
 
--   The current release supports offline demonstrations, preset
-    simulations, and API-based flow ingestion.
--   Live network-interface packet capture is not enabled.
--   Arbitrary raw PCAP analysis is not implemented;
-    `/api/encrypted/analyze-pcap` returns HTTP 501.
--   Encrypted traffic is analysed using supplied flow metadata; payloads
-    are not decrypted.
--   The project is a benchmark/demo platform and is not presented as a
-    fully integrated live SOC or SIEM/SOAR deployment.
+- The current release supports offline demonstrations, preset simulations, and API-based flow ingestion.
+- Live network-interface packet capture is not enabled.
+- Arbitrary raw PCAP analysis is not implemented; `/api/encrypted/analyze-pcap` currently returns HTTP 501.
+- Encrypted traffic analysis uses supplied flow and TLS metadata. The application does not decrypt payloads.
+- A working Elasticsearch instance is optional for the demonstration setup; the application can fall back to the provided demo alerts.
+- AEGIS is a research and benchmark demonstration platform. It should not be considered a fully integrated production SOC or SIEM/SOAR deployment.
 
-## Dataset References
+## Notes
 
--   NSL-KDD: https://www.unb.ca/cic/datasets/nsl.html
--   Stratosphere Malware/TLS datasets:
-    https://www.stratosphereips.org/datasets-malware
+- Keep the supplied dataset directory structure intact so the application and benchmark scripts can locate the files.
+- Use the interactive API documentation at `http://localhost:8000/docs` to inspect the available backend endpoints after starting the server.
+- If you encounter dependency or environment issues, verify that the required Python and Node.js versions are installed and that the commands are being run from the correct directories.
