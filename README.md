@@ -105,9 +105,6 @@ cd ..
 
 ## Running the Application
 
-Choose one of the following methods.
-
-### Option A: Windows launcher
 Open two terminals in the project root.
 
 **Terminal 1 – Backend**
